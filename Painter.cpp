@@ -188,8 +188,8 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 		Temp<vec4> p;
 		Temp<float> q;
 		ptr<PixelShader> psSky = shaderCache->GetPixelShader((
-			p = mul(skyUniforms.invViewProjTransform, newvec4(iTexcoord * newvec2(1.0f, -1.0f) + newvec2(1.0f, 1.0f), 1.0f, 1.0f)),
-			q = normalize(p["xyz"] / p["w"] - skyUniforms.cameraPosition)["z"],
+			p = mul(skyUniforms.invViewProjTransform, newvec4(iTexcoord * newvec2(2.0f, -2.0f) + newvec2(-1.0f, 1.0f), 1.0f, 1.0f)),
+			q = normalize(p["xyz"] / p["w"] - skyUniforms.cameraPosition)["z"] * Value<float>(0.5f) + Value<float>(0.5f),
 			fTarget = newvec4(q, q, q, 1)
 			));
 

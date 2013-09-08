@@ -1,5 +1,6 @@
 #include "Game.hpp"
 #include "Painter.hpp"
+#include "Geometry.hpp"
 
 static const float pi = acos(-1.0f);
 

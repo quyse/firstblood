@@ -4,7 +4,7 @@
 //*** Painter
 
 const int Painter::shadowMapSize = 512;
-const int Painter::debugVerticesBufferCount = 1024;
+const int Painter::debugVerticesBufferCount = 1023;
 
 Painter::DebugAttributes::DebugAttributes(ptr<Device> device, ptr<GeometryFormats> geometryFormats) :
 	ab(device->CreateAttributeBinding(geometryFormats->debug.al)),

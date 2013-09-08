@@ -2,10 +2,10 @@
 #define ___FIRSTBLOOD_PAINTER_HPP___
 
 #include "general.hpp"
+#include "GeometryFormats.hpp"
 #include <unordered_map>
 
 class Geometry;
-class GeometryFormats;
 
 /// Рисователь мира.
 class Painter : public Object
@@ -13,6 +13,8 @@ class Painter : public Object
 private:
 	/// Размер карты теней.
 	static const int shadowMapSize;
+	/// Количество индексов в буфере отладочной геометрии.
+	static const int debugVerticesBufferCount;
 
 	ptr<Device> device;
 	ptr<Context> context;
@@ -43,7 +45,7 @@ private:
 	{
 		ptr<AttributeBinding> ab;
 		Value<vec3> position;
-		Value<vec2> texcoord;
+		Value<vec3> color;
 
 		DebugAttributes(ptr<Device> device, ptr<GeometryFormats> geometryFormats);
 	} debugAttributes;
@@ -67,6 +69,16 @@ private:
 		ShadowBlurUniforms(ptr<Device> device);
 	} shadowBlurUniforms;
 
+	/// Uniform-группа неба.
+	struct SkyUniforms
+	{
+		ptr<UniformGroup> group;
+		Uniform<mat4x4> invViewProjTransform;
+		Uniform<vec3> cameraPosition;
+
+		SkyUniforms(ptr<Device> device);
+	} skyUniforms;
+
 	/// Uniform-группа сцены цветового прохода.
 	struct ColorSceneUniforms
 	{
@@ -81,18 +93,6 @@ private:
 		ColorSceneUniforms(ptr<Device> device);
 	} colorSceneUniforms;
 
-	/// Uniform-группа отладочной модели.
-	struct DebugModelUniforms
-	{
-		ptr<UniformGroup> group;
-		/// Матрица мира.
-		Uniform<mat4x4> worldTransform;
-		/// Цвет модели.
-		Uniform<vec3> color;
-
-		DebugModelUniforms(ptr<Device> device);
-	} debugModelUniforms;
-
 	/// Uniform-группа tone mapping.
 	struct ToneUniforms
 	{
@@ -106,17 +106,21 @@ private:
 
 	/// Интерполянты.
 	Interpolant<vec2> iTexcoord;
+	Interpolant<vec3> iColor;
 	Interpolant<float> iDepth;
 
 	/// Выходной цвет.
 	Fragment<vec4> fTarget;
 
+	/// Вершинный буфер для отладочной геометрии.
+	ptr<VertexBuffer> debugVertexBuffer;
+	ptr<IndexBuffer> debugIndexBuffer;
+
 	//*** Разное для шейдеров.
 	struct DebugShaders
 	{
 		ptr<VertexShader> vs;
-		ptr<PixelShader> psShadow;
-		ptr<PixelShader> psColor;
+		ptr<PixelShader> ps;
 	} debugShaders;
 
 	//** Состояния конвейера.
@@ -124,6 +128,8 @@ private:
 	ContextState csShadow;
 	/// Состояние для прохода размытия.
 	ContextState csShadowBlur;
+	/// Sky.
+	ContextState csSky;
 	/// Tone mapping.
 	ContextState csTone;
 
@@ -161,16 +167,8 @@ private:
 	float toneLuminanceKey;
 	float toneMaxLuminance;
 
-	/// Отладочная модель для рисования.
-	struct DebugModel
-	{
-		ptr<Geometry> geometry;
-		mat4x4 worldTransform;
-		vec3 color;
-
-		DebugModel(ptr<Geometry> geometry, const mat4x4& worldTransform, const vec3& color);
-	};
-	std::vector<DebugModel> debugModels;
+	/// Вершины отладочной геометрии.
+	std::vector<GeometryFormats::Debug::Vertex> debugVertices;
 
 public:
 	Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presenter, ptr<Output> output, ptr<ShaderCache> shaderCache, ptr<GeometryFormats> geometryFormats);
@@ -180,10 +178,16 @@ public:
 	void BeginFrame(float frameTime);
 	/// Установить камеру.
 	void SetCamera(const mat4x4& cameraViewProj, const vec3& cameraPosition);
-	/// Зарегистрировать отладочную модель.
-	void AddDebugModel(ptr<Geometry> geometry, const mat4x4& worldTransform, const vec3& color);
 	/// Установить параметры освещённости.
 	void SetSceneLighting(const vec3& ambientLight, const vec3& sunLight, const vec3& sunDirection, const mat4x4& sunTransform);
+
+	//*** Отладочное рисование.
+	void DebugDrawLine(const vec3& a, const vec3& b, const vec3& color, float thickness = 0.1f, const vec3& normal = vec3(0, 0, 1));
+	void DebugDrawRectangle(float x1, float y1, float x2, float y2, float z, const vec3& color, float thickness = 0.1f, const vec3& normal = vec3(0, 0, 1));
+/* not implemented yet
+	void DebugDrawAABB(const vec3& a, const vec3& b, const vec3& color);
+	void DebugDrawCube(const vec3& center, const mat4x4& transform, const vec3& color);
+	void DebugDrawSphere(const vec3& center, float radius, const vec3& color, int alphaCount = 8, int betaCount = 8);*/
 
 	/// Установить параметры постпроцессинга.
 	void SetupPostprocess(float bloomLimit, float toneLuminanceKey, float toneMaxLuminance);

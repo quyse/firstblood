@@ -1,4 +1,4 @@
-#include "Game.hpp"
+#include "Engine.hpp"
 #include "Painter.hpp"
 #include "Geometry.hpp"
 #include "GeometryFormats.hpp"
@@ -7,12 +7,12 @@
 
 static const float maxAngleChange = 0.1f;
 
-Game::Game() :
+Engine::Engine() :
 	cameraAlpha(0),
-	cameraBeta(0)
+	cameraBeta(-3.1415926535897932f * 0.25f)
 {}
 
-void Game::Run()
+void Engine::Run()
 {
 	try
 	{
@@ -67,13 +67,11 @@ void Game::Run()
 		textDrawer = TextDrawer::Create(device, shaderCache);
 		font = fontManager->Get("mnogobukov.font");
 
-		physicsWorld = NEW(Physics::BtWorld());
-
 		boxGeometry = LoadDebugGeometry("box.geo");
 
 		try
 		{
-			window->Run(Handler::Bind(MakePointer(this), &Game::Tick));
+			window->Run(Handler::Bind(MakePointer(this), &Engine::Tick));
 		}
 		catch(Exception* exception)
 		{
@@ -86,7 +84,7 @@ void Game::Run()
 	}
 }
 
-void Game::Tick()
+void Engine::Tick()
 {
 	float frameTime = ticker.Tick();
 
@@ -159,17 +157,17 @@ void Game::Tick()
 	if(inputState.keyboard[69])
 		cameraMove += cameraMoveDirectionUp * cameraStep;
 
-	physicsWorld->Simulate(frameTime);
-
-	static vec3 cameraPosition(0, 0, 0);
+	static vec3 cameraPosition(-5, 0, 5);
 	cameraPosition += cameraMove * frameTime;
 
 	context->Reset();
 
 	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition, cameraPosition + cameraDirection, vec3(0, 0, 1));
-	mat4x4 projMatrix = CreateProjectionPerspectiveFovMatrix(3.1415926535897932f / 4, float(screenWidth) / float(screenHeight), 0.1f, 100.0f);
+//	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition = vec3(10, 10, 50), vec3(0, 0, 0), vec3(0, 0, 1));
+	mat4x4 projMatrix = CreateProjectionPerspectiveFovMatrix(3.1415926535897932f / 4, float(screenWidth) / float(screenHeight), 0.1f, 1000.0f);
 
-	// зарегистрировать все объекты
+	// рисование кадра
+
 	painter->BeginFrame(frameTime);
 	painter->SetCamera(projMatrix * viewMatrix, cameraPosition);
 	const vec3 sunDirection = normalize(vec3(-1, -1, -1));
@@ -178,8 +176,7 @@ void Game::Tick()
 		* CreateLookAtMatrix(sunDirection * -100.0f, vec3(0, 0, 0), vec3(0, 0, 1));
 	painter->SetSceneLighting(vec3(1, 1, 1) * 0.1f, vec3(1, 1, 1), sunDirection, sunTransform);
 
-	painter->AddDebugModel(boxGeometry, CreateTranslationMatrix(vec3(0, 0, -1)) * CreateScalingMatrix(vec3(100, 100, 1)), vec3(1, 1, 1) * 0.5f);
-	painter->AddDebugModel(boxGeometry, CreateTranslationMatrix(vec3(1, 1, 1)), vec3(1, 0, 0));
+	Step(frameTime);
 
 	painter->SetupPostprocess(1.0f, 1.0f, 1.0f);
 
@@ -214,12 +211,12 @@ void Game::Tick()
 	presenter->Present();
 }
 
-ptr<Texture> Game::LoadTexture(const String& fileName)
+ptr<Texture> Engine::LoadTexture(const String& fileName)
 {
 	return textureManager->Get(fileName);
 }
 
-ptr<Geometry> Game::LoadDebugGeometry(const String& fileName)
+ptr<Geometry> Engine::LoadDebugGeometry(const String& fileName)
 {
 	return NEW(Geometry(
 		device->CreateStaticVertexBuffer(fileSystem->LoadFile(fileName + ".vertices"), geometryFormats->debug.vl),

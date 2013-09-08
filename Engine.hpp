@@ -1,5 +1,5 @@
-#ifndef ___FIRSTBLOOD_GAME_HPP___
-#define ___FIRSTBLOOD_GAME_HPP___
+#ifndef ___FIRSTBLOOD_ENGINE_HPP___
+#define ___FIRSTBLOOD_ENGINE_HPP___
 
 #include "general.hpp"
 
@@ -7,10 +7,9 @@ class Geometry;
 class GeometryFormats;
 class Painter;
 
-/// Класс игры.
-class Game : public Object
+class Engine : public Object
 {
-private:
+protected:
 	ptr<Platform::Window> window;
 	ptr<Device> device;
 	ptr<Context> context;
@@ -34,12 +33,12 @@ private:
 
 	Ticker ticker;
 
-	ptr<Physics::World> physicsWorld;
-
 	ptr<Geometry> boxGeometry;
 
+	virtual void Step(float frameTime) = 0;
+
 public:
-	Game();
+	Engine();
 
 	void Run();
 	void Tick();

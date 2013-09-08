@@ -1,5 +1,8 @@
 #include "general.hpp"
 #include "Game.hpp"
+#include "Painter.hpp"
+#include "Geometry.hpp"
+#include "GeometryFormats.hpp"
 #include <sstream>
 #include <iostream>
 #include <fstream>

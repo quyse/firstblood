@@ -1,15 +1,15 @@
 #include "Painter.hpp"
 #include "Geometry.hpp"
-#include "GeometryFormats.hpp"
 
 //*** Painter
 
 const int Painter::shadowMapSize = 512;
+const int Painter::debugVerticesBufferCount = 1024;
 
 Painter::DebugAttributes::DebugAttributes(ptr<Device> device, ptr<GeometryFormats> geometryFormats) :
 	ab(device->CreateAttributeBinding(geometryFormats->debug.al)),
 	position(geometryFormats->debug.alePosition),
-	texcoord(geometryFormats->debug.aleTexcoord)
+	color(geometryFormats->debug.aleColor)
 {}
 
 Painter::ShadowSceneUniforms::ShadowSceneUniforms(ptr<Device> device) :
@@ -27,6 +27,14 @@ Painter::ShadowBlurUniforms::ShadowBlurUniforms(ptr<Device> device) :
 	group->Finalize(device);
 }
 
+Painter::SkyUniforms::SkyUniforms(ptr<Device> device) :
+	group(NEW(UniformGroup(0))),
+	invViewProjTransform(group->AddUniform<mat4x4>()),
+	cameraPosition(group->AddUniform<vec3>())
+{
+	group->Finalize(device);
+}
+
 Painter::ColorSceneUniforms::ColorSceneUniforms(ptr<Device> device) :
 	group(NEW(UniformGroup(0))),
 	viewProjTransform(group->AddUniform<mat4x4>()),
@@ -35,14 +43,6 @@ Painter::ColorSceneUniforms::ColorSceneUniforms(ptr<Device> device) :
 	sunTransform(group->AddUniform<mat4x4>()),
 	sunLight(group->AddUniform<vec3>()),
 	sunShadowSampler(0)
-{
-	group->Finalize(device);
-}
-
-Painter::DebugModelUniforms::DebugModelUniforms(ptr<Device> device) :
-	group(NEW(UniformGroup(1))),
-	worldTransform(group->AddUniform<mat4x4>()),
-	color(group->AddUniform<vec3>())
 {
 	group->Finalize(device);
 }
@@ -56,12 +56,6 @@ Painter::ToneUniforms::ToneUniforms(ptr<Device> device) :
 	group->Finalize(device);
 }
 
-Painter::DebugModel::DebugModel(ptr<Geometry> geometry, const mat4x4& worldTransform, const vec3& color) :
-	geometry(geometry),
-	worldTransform(worldTransform),
-	color(color)
-{}
-
 Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presenter, ptr<Output> output, ptr<ShaderCache> shaderCache, ptr<GeometryFormats> geometryFormats) :
 	device(device),
 	context(context),
@@ -74,12 +68,13 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 	debugAttributes(device, geometryFormats),
 	shadowSceneUniforms(device),
 	shadowBlurUniforms(device),
+	skyUniforms(device),
 	colorSceneUniforms(device),
-	debugModelUniforms(device),
 	toneUniforms(device),
 
 	iTexcoord(0),
-	iDepth(1),
+	iColor(1),
+	iDepth(2),
 	fTarget(0)
 {
 	// создать ресурсы, зависящие от размера экрана
@@ -140,16 +135,13 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 
 	Temp<vec4> tmpPosition;
 	debugShaders.vs = shaderCache->GetVertexShader((
-		tmpPosition = mul(shadowSceneUniforms.viewProjTransform, newvec4(debugAttributes.position, 1.0f)),
+		tmpPosition = mul(colorSceneUniforms.viewProjTransform, newvec4(debugAttributes.position, 1.0f)),
+		//tmpPosition = newvec4(debugAttributes.position, 1.0f),
 		setPosition(tmpPosition),
-		iTexcoord = debugAttributes.texcoord,
-		iDepth = tmpPosition["z"]
+		iColor = debugAttributes.color
 		));
-	debugShaders.psShadow = shaderCache->GetPixelShader((
-		fTarget = newvec4(iDepth, 0, 0, 0)
-		));
-	debugShaders.psColor = shaderCache->GetPixelShader((
-		fTarget = newvec4(debugModelUniforms.color, 1.0f)
+	debugShaders.ps = shaderCache->GetPixelShader((
+		fTarget = newvec4(iColor, 1)
 		));
 
 	//** инициализировать состояния конвейера
@@ -188,6 +180,19 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 
 		csFilter.vertexShader = vertexShader;
 
+		// шейдеры неба
+		ptr<VertexShader> vsSky = shaderCache->GetVertexShader((
+			setPosition(newvec4(quad.aPosition["xy"], 1.0f, 1.0f)),
+			iTexcoord = screenToTexture(quad.aPosition["xy"])
+			));
+		Temp<vec4> p;
+		Temp<float> q;
+		ptr<PixelShader> psSky = shaderCache->GetPixelShader((
+			p = mul(skyUniforms.invViewProjTransform, newvec4(iTexcoord * newvec2(1.0f, -1.0f) + newvec2(1.0f, 1.0f), 1.0f, 1.0f)),
+			q = normalize(p["xyz"] / p["w"] - skyUniforms.cameraPosition)["z"],
+			fTarget = newvec4(q, q, q, 1)
+			));
+
 		// пиксельный шейдер для размытия тени
 		ptr<PixelShader> psShadowBlur;
 		{
@@ -214,6 +219,8 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 			Expression shader = (
 				iTexcoord,
 				color = toneUniforms.sourceSampler.Sample(iTexcoord),
+				fTarget = newvec4(color, 1.0f)
+#if 0
 				luminance = dot(color, newvec3(0.2126f, 0.7152f, 0.0722f)),
 				relativeLuminance = toneUniforms.luminanceKey * luminance,
 				intensity = relativeLuminance * (Value<float>(1) + relativeLuminance / toneUniforms.maxLuminance) / (Value<float>(1) + relativeLuminance),
@@ -221,6 +228,7 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 				// гамма-коррекция
 				color = pow(color, newvec3(0.45f, 0.45f, 0.45f)),
 				fTarget = newvec4(color, 1.0f)
+#endif
 			);
 			psTone = shaderCache->GetPixelShader(shader);
 		}
@@ -251,12 +259,27 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 		shadowBlurUniforms.group->Apply(csShadowBlur);
 		csShadowBlur.pixelShader = psShadowBlur;
 
+		// состояние для неба
+		csSky = csFilter;
+		csSky.vertexShader = vsSky;
+		csSky.pixelShader = psSky;
+		skyUniforms.group->Apply(csSky);
+
 		// tone mapping
 		toneUniforms.sourceSampler.SetTexture(rbMain->GetTexture());
 		toneUniforms.sourceSampler.SetSamplerState(pointSampler);
 		toneUniforms.sourceSampler.Apply(csTone);
 		toneUniforms.group->Apply(csTone);
 		csTone.pixelShader = psTone;
+	}
+
+	debugVertexBuffer = device->CreateDynamicVertexBuffer(debugVerticesBufferCount * sizeof(GeometryFormats::Debug::Vertex), geometryFormats->debug.vl);
+	{
+		ptr<File> file = NEW(MemoryFile(debugVerticesBufferCount * sizeof(unsigned short)));
+		unsigned short* indices = (unsigned short*)file->GetData();
+		for(int i = 0; i < debugVerticesBufferCount; ++i)
+			indices[i] = i;
+		debugIndexBuffer = device->CreateStaticIndexBuffer(file, sizeof(unsigned short));
 	}
 }
 
@@ -281,7 +304,7 @@ void Painter::BeginFrame(float frameTime)
 {
 	this->frameTime = frameTime;
 
-	debugModels.clear();
+	debugVertices.clear();
 }
 
 void Painter::SetCamera(const mat4x4& cameraViewProj, const vec3& cameraPosition)
@@ -291,16 +314,35 @@ void Painter::SetCamera(const mat4x4& cameraViewProj, const vec3& cameraPosition
 	this->cameraPosition = cameraPosition;
 }
 
-void Painter::AddDebugModel(ptr<Geometry> geometry, const mat4x4& worldTransform, const vec3& color)
-{
-	debugModels.push_back(DebugModel(geometry, worldTransform, color));
-}
-
 void Painter::SetSceneLighting(const vec3& ambientLight, const vec3& sunLight, const vec3& sunDirection, const mat4x4& sunTransform)
 {
 	this->ambientLight = ambientLight;
 	this->sunDirection = sunDirection;
 	this->sunLight = sunLight;
+}
+
+void Painter::DebugDrawLine(const vec3& a, const vec3& b, const vec3& color, float thickness, const vec3& normal)
+{
+	vec3 line = b - a;
+	float len = length(line);
+	if(len < 1e-8)
+		return;
+	line /= len;
+	vec3 side = cross(line, normal) * thickness;
+	debugVertices.push_back(GeometryFormats::Debug::Vertex(a + side, color));
+	debugVertices.push_back(GeometryFormats::Debug::Vertex(a - side, color));
+	debugVertices.push_back(GeometryFormats::Debug::Vertex(b - side, color));
+	debugVertices.push_back(GeometryFormats::Debug::Vertex(a + side, color));
+	debugVertices.push_back(GeometryFormats::Debug::Vertex(b - side, color));
+	debugVertices.push_back(GeometryFormats::Debug::Vertex(b + side, color));
+}
+
+void Painter::DebugDrawRectangle(float x1, float y1, float x2, float y2, float z, const vec3& color, float thickness, const vec3& normal)
+{
+	DebugDrawLine(vec3(x1, y1, z), vec3(x2, y1, z), color, thickness, normal);
+	DebugDrawLine(vec3(x2, y1, z), vec3(x2, y2, z), color, thickness, normal);
+	DebugDrawLine(vec3(x2, y2, z), vec3(x1, y2, z), color, thickness, normal);
+	DebugDrawLine(vec3(x1, y2, z), vec3(x1, y1, z), color, thickness, normal);
 }
 
 void Painter::SetupPostprocess(float bloomLimit, float toneLuminanceKey, float toneMaxLuminance)
@@ -316,6 +358,7 @@ void Painter::Draw()
 	float farColor[] = { 1e8, 1e8, 1e8, 1e8 };
 
 	// выполнить теневой проход
+	if(0)
 	{
 		ContextState& cs = context->GetTargetState();
 
@@ -331,32 +374,6 @@ void Painter::Draw()
 		// очистить карту теней
 		context->ClearDepthStencilBuffer(dsbShadow, 1.0f);
 		context->ClearRenderBuffer(rbShadow, farColor);
-
-		//** рисуем отладочные модели
-
-		cs.attributeBinding = debugAttributes.ab;
-		cs.vertexShader = debugShaders.vs;
-		cs.pixelShader = debugShaders.psShadow;
-		// установить константный буфер
-		debugModelUniforms.group->Apply(cs);
-
-		// цикл по моделям
-		for(size_t i = 0; i < debugModels.size(); ++i)
-		{
-			const DebugModel& model = debugModels[i];
-
-			// установить геометрию
-			cs.vertexBuffers[0] = model.geometry->GetVertexBuffer();
-			cs.indexBuffer = model.geometry->GetIndexBuffer();
-			// установить uniform'ы
-			debugModelUniforms.worldTransform.SetValue(model.worldTransform);
-			debugModelUniforms.color.SetValue(model.color);
-			// и залить в GPU
-			debugModelUniforms.group->Upload(context);
-
-			// нарисовать
-			context->Draw();
-		}
 
 		// выполнить размытие тени
 		// первый проход
@@ -388,43 +405,49 @@ void Painter::Draw()
 	ContextState& cs = context->GetTargetState();
 
 	cs.renderBuffers[0] = rbMain;
-	cs.depthStencilBuffer = dsbMain;
+	cs.depthStencilBuffer = 0;
 	cs.viewportWidth = screenWidth;
 	cs.viewportHeight = screenHeight;
+	cs.cullMode = ContextState::cullModeNone;
+
+	// нарисовать небо
+	skyUniforms.invViewProjTransform.SetValue(cameraInvViewProj);
+	skyUniforms.cameraPosition.SetValue(cameraPosition);
+	skyUniforms.group->Apply(cs);
+	skyUniforms.group->Upload(context);
+	cs.vertexShader = csSky.vertexShader;
+	cs.pixelShader = csSky.pixelShader;
+	cs.vertexBuffers[0] = csSky.vertexBuffers[0];
+	cs.indexBuffer = csSky.indexBuffer;
+	cs.attributeBinding = csSky.attributeBinding;
+	cs.depthWrite = false;
+	context->Draw();
 
 	// установить параметры сцены
+	cs.depthStencilBuffer = dsbMain;
 	colorSceneUniforms.viewProjTransform.SetValue(cameraViewProj);
 	colorSceneUniforms.invViewProjTransform.SetValue(cameraInvViewProj);
 	colorSceneUniforms.cameraPosition.SetValue(cameraPosition);
 	colorSceneUniforms.sunTransform.SetValue(sunTransform);
 	colorSceneUniforms.sunLight.SetValue(sunLight);
-	colorSceneUniforms.sunShadowSampler.Apply(cs);
+	//colorSceneUniforms.sunShadowSampler.Apply(cs);
 	colorSceneUniforms.group->Apply(cs);
 	colorSceneUniforms.group->Upload(context);
 
-	//** нарисовать отладочные модели
+	//** нарисовать отладочную геометрию
 
 	cs.attributeBinding = debugAttributes.ab;
 	cs.vertexShader = debugShaders.vs;
-	cs.pixelShader = debugShaders.psColor;
-	debugModelUniforms.group->Apply(cs);
+	cs.pixelShader = debugShaders.ps;
+	cs.vertexBuffers[0] = debugVertexBuffer;
+	cs.indexBuffer = debugIndexBuffer;
 
-	// нарисовать
-	for(size_t i = 0; i < debugModels.size(); ++i)
+	for(int i = 0; i < (int)debugVertices.size(); i += debugVerticesBufferCount)
 	{
-		const DebugModel& model = debugModels[i];
+		int verticesCount = std::min((int)debugVertices.size() - i, debugVerticesBufferCount);
+		context->SetVertexBufferData(debugVertexBuffer, &debugVertices[i], verticesCount * sizeof(GeometryFormats::Debug::Vertex));
 
-		// установить геометрию
-		cs.vertexBuffers[0] = model.geometry->GetVertexBuffer();
-		cs.indexBuffer = model.geometry->GetIndexBuffer();
-
-		// установить uniform'ы
-		debugModelUniforms.worldTransform.SetValue(model.worldTransform);
-		debugModelUniforms.color.SetValue(model.color);
-		debugModelUniforms.group->Upload(context);
-
-		// нарисовать
-		context->Draw();
+		context->Draw(verticesCount);
 	}
 
 	// всё, теперь постпроцессинг

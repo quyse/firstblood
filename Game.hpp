@@ -1,6 +1,10 @@
 #ifndef ___FIRSTBLOOD_GAME_HPP___
 #define ___FIRSTBLOOD_GAME_HPP___
 
+#define GL_DEBUG
+
+#include <vector>
+
 #include "Engine.hpp"
 #include "rvo/RVO.h"
 
@@ -11,6 +15,7 @@ protected:
 
 protected:
 	RVO::RVOSimulator rvoSimulation;
+	std::vector<RVO::Vector2> goals;
 
 };
 

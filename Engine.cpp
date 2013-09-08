@@ -22,8 +22,8 @@ void Engine::Run()
 		device = system->CreateDevice(adapter);
 		ptr<Graphics::Monitor> monitor = adapter->GetMonitors()[0];
 
-		screenWidth = 800;
-		screenHeight = 600;
+		screenWidth = 1024;
+		screenHeight = 768;
 		bool fullscreen = false;
 
 		ptr<Platform::Window> window = monitor->CreateDefaultWindow(
@@ -157,7 +157,7 @@ void Engine::Tick()
 	if(inputState.keyboard[69])
 		cameraMove += cameraMoveDirectionUp * cameraStep;
 
-	static vec3 cameraPosition(-5, 0, 5);
+	static vec3 cameraPosition(0, 0, 100);
 	cameraPosition += cameraMove * frameTime;
 
 	context->Reset();

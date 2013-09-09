@@ -184,10 +184,10 @@ public:
 	//*** Отладочное рисование.
 	void DebugDrawLine(const vec3& a, const vec3& b, const vec3& color, float thickness = 0.1f, const vec3& normal = vec3(0, 0, 1));
 	void DebugDrawRectangle(float x1, float y1, float x2, float y2, float z, const vec3& color, float thickness = 0.1f, const vec3& normal = vec3(0, 0, 1));
-/* not implemented yet
 	void DebugDrawAABB(const vec3& a, const vec3& b, const vec3& color);
-	void DebugDrawCube(const vec3& center, const mat4x4& transform, const vec3& color);
-	void DebugDrawSphere(const vec3& center, float radius, const vec3& color, int alphaCount = 8, int betaCount = 8);*/
+	/// Нарисовать куб [-1, 1] с заданной трансформацией.
+	void DebugDrawCube(const mat4x4& transform, const vec3& color);
+	//void DebugDrawSphere(const vec3& center, float radius, const vec3& color, int alphaCount = 8, int betaCount = 8);
 
 	/// Установить параметры постпроцессинга.
 	void SetupPostprocess(float bloomLimit, float toneLuminanceKey, float toneMaxLuminance);

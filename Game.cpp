@@ -61,5 +61,9 @@ void Game::Step(float frameTime)
 		for(int i = 0; i < 10; ++i)
 			painter->DebugDrawLine(p[i ? i - 1 : 9] * scale + offset, p[i] * scale + offset, color);
 	}
+
+	painter->DebugDrawAABB(vec3(-10, -10, -10), vec3(10, 10, 10), vec3(0, 1, 0));
+	painter->DebugDrawAABB(vec3(9, 9, 9), vec3(11, 11, 11), vec3(0, 0, 1));
+
 #endif
 }

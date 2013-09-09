@@ -14,7 +14,7 @@ public:
 			vec3 position;
 			vec3 color;
 
-			Vertex(const vec3& position, const vec3& color);
+			Vertex(const vec3& position = vec3(0, 0, 0), const vec3& color = vec3(0, 0, 0));
 		};
 
 		ptr<VertexLayout> vl;

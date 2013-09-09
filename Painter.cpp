@@ -345,6 +345,37 @@ void Painter::DebugDrawRectangle(float x1, float y1, float x2, float y2, float z
 	DebugDrawLine(vec3(x1, y2, z), vec3(x1, y1, z), color, thickness, normal);
 }
 
+void Painter::DebugDrawAABB(const vec3& a, const vec3& b, const vec3& color)
+{
+	DebugDrawCube(CreateTranslationMatrix((a + b) * 0.5f) * CreateScalingMatrix((b - a) * 0.5f), color);
+}
+
+void Painter::DebugDrawCube(const mat4x4& transform, const vec3& color)
+{
+	GeometryFormats::Debug::Vertex v[8];
+	int k = 0;
+	for(int z = -1; z <= 1; z += 2)
+		for(int y = -1; y <= 1; y += 2)
+			for(int x = -1; x <= 1; x += 2)
+			{
+				vec4 r = transform * vec3((float)x, (float)y, (float)z);
+				v[k++] = GeometryFormats::Debug::Vertex(vec3(r.x, r.y, r.z), color);
+			}
+	static const int n[][4] =
+	{
+		{ 0, 1, 3, 2 },
+		{ 0, 4, 5, 1 },
+		{ 0, 2, 6, 4 },
+		{ 3, 7, 6, 2 },
+		{ 3, 1, 5, 7 },
+		{ 4, 6, 7, 5 }
+	};
+	static const int q[] = { 0, 1, 2, 0, 2, 3 };
+	for(int i = 0; i < 6; ++i)
+		for(int j = 0; j < 6; ++j)
+			debugVertices.push_back(v[n[i][q[j]]]);
+}
+
 void Painter::SetupPostprocess(float bloomLimit, float toneLuminanceKey, float toneMaxLuminance)
 {
 	this->bloomLimit = bloomLimit;
@@ -408,7 +439,7 @@ void Painter::Draw()
 	cs.depthStencilBuffer = 0;
 	cs.viewportWidth = screenWidth;
 	cs.viewportHeight = screenHeight;
-	cs.cullMode = ContextState::cullModeNone;
+	cs.cullMode = ContextState::cullModeBack;
 
 	// нарисовать небо
 	skyUniforms.invViewProjTransform.SetValue(cameraInvViewProj);

@@ -23,7 +23,7 @@ void Engine::Run()
 		ptr<Graphics::Monitor> monitor = adapter->GetMonitors()[0];
 
 		screenWidth = 1024;
-		screenHeight = 768;
+		screenHeight = 600;
 		bool fullscreen = false;
 
 		ptr<Platform::Window> window = monitor->CreateDefaultWindow(

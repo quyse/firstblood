@@ -1,14 +1,32 @@
 #include "Game.hpp"
 #include "Painter.hpp"
 #include "Geometry.hpp"
+#include "geometry/intersections.hpp"
 
 static const float pi = acos(-1.0f);
 
 static bool rvoExampleInitialized = false;
 
+Game::Game()
+{
+	quadtree = new Quadtree<int>(128, 7, 1024 * 1024);
+}
+
+
+Game::~Game()
+{
+	delete quadtree;
+}
+
+
 void Game::Step(float frameTime)
 {
 #ifdef GL_DEBUG
+	vec3 i0, i1;
+	float tmin, tmax;
+	bool answer = intersectSegmentAABB(vec3(-3, -3, -3), vec3(-2, -2, 0), vec3(-1, -1, -1), vec3(1, 1, 1), i0, i1, tmin, tmax);
+	std::cout << answer << " " << i0 << " " << i1 << "\n";
+	answer = intersectSegmentSphere(vec3(0, 0, 0), vec3(5, 5, 5), vec3(2, 2, 2), 5.0f, i0, i1, tmin, tmax);
 	if (!rvoExampleInitialized)
 	{
 		rvoSimulation.setAgentDefaults(15.0f, 10, 10.0f, 10.0f, 1.5f, 2.0f);

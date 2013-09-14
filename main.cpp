@@ -13,6 +13,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, INT)
 int main()
 #endif
 {
+#if defined(_MSVC_BUILD)
+	SetCurrentDirectoryA("F:/firstblood/msvc/firstblood/Debug");
+#endif
 	try
 	{
 		MakePointer(NEW(Game()))->Run();

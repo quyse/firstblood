@@ -1,0 +1,86 @@
+#ifndef __FBE_GEOMETRY_INTERSECTIONS__
+#define __FBE_GEOMETRY_INTERSECTIONS__
+
+#include "../../inanity/math/basic.hpp"
+#include <math.h>
+#include <algorithm>
+
+static float epsilon = 1e-6f;
+
+// if segment intersects AABB, sets intersection0 and intersection1 to be start/end points of intersection
+template<typename T, int N>
+inline bool intersectSegmentAABB(xvec<T, N>& a0, xvec<T, N>& a1, xvec<T, N>& boxMin, xvec<T, N>& boxMax, xvec<T, N>& intersection0, xvec<T, N>& intersection1, T& tmin, T& tmax)
+{
+	xvec<T, N> d = a1 - a0;
+	tmin = -FLT_MAX;
+	tmax = -FLT_MAX;
+
+	for (int i = 0; i < N; ++i) 
+	{
+		if (fabsf(d(i)) < (T)epsilon) 
+		{
+			if (a0(i) < boxMin(i) || a0(i) > boxMax(i)) 
+				return false;
+		} 
+		else 
+		{
+			float ood = 1.0f / d(i);
+			float t1 = (boxMin(i) - a0(i)) * ood;
+			float t2 = (boxMax(i) - a0(i)) * ood;
+			if (t1 > t2)
+				std::swap(t1, t2);
+			if (t1 > tmin) 
+				tmin = t1;
+			if (t2 > tmax) 
+				tmax = t2;
+			if (tmin > tmax) 
+				return false;
+		}
+	}
+	
+	if (tmin > 1.0f)
+		return false; 
+	if (tmin < 0.0f)
+		tmin = 0.0f;
+
+	if (tmax > 1.0f)
+		tmax = 1.0f;
+
+	intersection0 = a0 + d * tmin;
+	intersection1 = a0 + d * tmax;
+	return true;
+}
+
+
+// if segment intersects sphere, sets intersection0 and intersection1 to be start/end points of intersection
+template<typename T, int N>
+inline bool intersectSegmentSphere(xvec<T, N>& a0, xvec<T, N>& a1, xvec<T, N>& center, T radius, xvec<T, N>& intersection0, xvec<T, N>& intersection1, T& tmin, T& tmax)
+{
+	xvec<T, N> d = a1 - a0;
+	xvec<T, N> m = a0 - center;
+	T b = dot(m, d);
+	T c = dot(m, m) - radius * radius;
+	if (c > (T)0.0 && b > (T)0.0) 
+		return false;
+
+	float discr = b * b - c;
+	if (discr < (T)0.0) 
+		return false;
+	T sqrtDiscr = sqrtf(discr);
+
+	tmin = -b - sqrtDiscr;
+	if (tmin > (T)1.0)
+		return false;
+	if (tmin < (T)0.0) 
+		tmin = (T)0.0;
+
+	tmax = -b + sqrtDiscr;
+	if (tmax > (T)1.0)
+		tmax = (T)1.0;
+
+	intersection0 = a0 + d * tmin;
+	intersection1 = a0 + d * tmax;
+	return true;
+}
+
+#endif

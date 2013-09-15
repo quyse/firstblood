@@ -14,7 +14,7 @@ inline bool testSegmentSegment1D(float a0, float a1, float b0, float b1)
 
 
 template<typename T, int N>
-inline bool testPointAABB(xvec<T, N>& point, xvec<T, N>& boxMin, xvec<T, N>& boxMax)
+inline bool testPointAABB(const xvec<T, N>& point, const xvec<T, N>& boxMin, const xvec<T, N>& boxMax)
 {
 	for (int i = 0; i < N; ++i)
 	{
@@ -27,7 +27,7 @@ inline bool testPointAABB(xvec<T, N>& point, xvec<T, N>& boxMin, xvec<T, N>& box
 
 
 template<typename T, int N>
-inline bool testAABBAABB(xvec<T, N>& bMin0, xvec<T, N>& bMax0, xvec<T, N>& bMin1, xvec<T, N>& bMax1)
+inline bool testAABBAABB(const xvec<T, N>& bMin0, const xvec<T, N>& bMax0, const xvec<T, N>& bMin1, const xvec<T, N>& bMax1)
 {
 	for (int i = 0; i < N; ++i)
 	{
@@ -40,7 +40,7 @@ inline bool testAABBAABB(xvec<T, N>& bMin0, xvec<T, N>& bMax0, xvec<T, N>& bMin1
 
 // if segment intersects AABB, sets intersection0 and intersection1 to be start/end points of intersection
 template<typename T, int N>
-inline bool intersectSegmentAABB(xvec<T, N>& a0, xvec<T, N>& a1, xvec<T, N>& boxMin, xvec<T, N>& boxMax, xvec<T, N>& intersection0, xvec<T, N>& intersection1, T& tmin, T& tmax)
+inline bool intersectSegmentAABB(const xvec<T, N>& a0, const xvec<T, N>& a1, const xvec<T, N>& boxMin, const xvec<T, N>& boxMax, xvec<T, N>& intersection0, xvec<T, N>& intersection1, T& tmin, T& tmax)
 {
 	xvec<T, N> d = a1 - a0;
 	tmin = -FLT_MAX;
@@ -85,7 +85,7 @@ inline bool intersectSegmentAABB(xvec<T, N>& a0, xvec<T, N>& a1, xvec<T, N>& box
 
 // if segment intersects sphere, sets intersection0 and intersection1 to be start/end points of intersection
 template<typename T, int N>
-inline bool intersectSegmentSphere(xvec<T, N>& a0, xvec<T, N>& a1, xvec<T, N>& center, T radius, xvec<T, N>& intersection0, xvec<T, N>& intersection1, T& tmin, T& tmax)
+inline bool intersectSegmentSphere(const xvec<T, N>& a0, const xvec<T, N>& a1, const xvec<T, N>& center, T radius, xvec<T, N>& intersection0, xvec<T, N>& intersection1, T& tmin, T& tmax)
 {
 	xvec<T, N> d = a1 - a0;
 	xvec<T, N> m = a0 - center;

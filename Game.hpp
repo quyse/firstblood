@@ -11,10 +11,10 @@
 
 struct QuadtreeDebugObject
 {
-	QuadtreeDebugObject(vec2& inCenter, float inRadius) : center(inCenter), radius(inRadius) {};
+	QuadtreeDebugObject(const vec2& inCenter, float inRadius) : center(inCenter), radius(inRadius) {};
 	vec2 center;
 	float radius;
-	bool raycast(vec2& origin, vec2& end, float& dist)
+	bool raycast(const vec2& origin, const vec2& end, float& dist)
 	{
 		vec2 i0, i1;
 		float tmax;

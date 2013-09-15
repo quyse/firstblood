@@ -9,6 +9,19 @@
 #include "spatial/quadtree.hpp"
 #include "rvo/RVO.h"
 
+struct QuadtreeDebugObject
+{
+	QuadtreeDebugObject(vec2& inCenter, float inRadius) : center(inCenter), radius(inRadius) {};
+	vec2 center;
+	float radius;
+	bool raycast(vec2& origin, vec2& end, float& dist)
+	{
+		vec2 i0, i1;
+		float tmax;
+		return intersectSegmentSphere(origin, end, center, radius, i0, i1, dist, tmax);
+	}
+};
+
 class Game : public Engine
 {
 public:
@@ -17,11 +30,12 @@ public:
 
 protected:
 	void Step(float frameTime);
+	void drawQuadtreeNode(Quadtree<QuadtreeDebugObject, Game>::Node*);
 
 protected:
 	RVO::RVOSimulator rvoSimulation;
 	std::vector<RVO::Vector2> goals;
-	Quadtree<int>* quadtree;
+	Quadtree<QuadtreeDebugObject, Game>* quadtree;
 
 };
 

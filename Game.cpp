@@ -9,7 +9,7 @@ static bool rvoExampleInitialized = false;
 
 Game::Game()
 {
-	quadtree = new Quadtree<int>(128, 7, 1024 * 1024);
+	quadtree = new Quadtree<QuadtreeDebugObject, Game>(32, 7, 1024 * 1024);
 }
 
 
@@ -19,13 +19,36 @@ Game::~Game()
 }
 
 
+void Game::drawQuadtreeNode(Quadtree<QuadtreeDebugObject, Game>::Node* node)
+{
+	painter->DebugDrawRectangle(node->min.x, node->min.y, node->max.x, node->max.y, 0, vec3(0, 1, 0));
+	if (node->botLeft != nullptr)
+		drawQuadtreeNode(node->botLeft);
+	if (node->topLeft != nullptr)
+		drawQuadtreeNode(node->topLeft);
+	if (node->topRight != nullptr)
+		drawQuadtreeNode(node->topRight);
+	if (node->botRight != nullptr)
+		drawQuadtreeNode(node->botRight);
+
+	Quadtree<QuadtreeDebugObject, Game>::BoundingCircle* s = node->inhabitants;
+	while (s != nullptr)
+	{
+		vec2 center = s->center;
+		float radius = s->radius;
+		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 0, vec3(1.0f, 0.8f, 0.8f));
+		s = s->next;
+	}
+}
+
+
 void Game::Step(float frameTime)
 {
 #ifdef GL_DEBUG
 	vec3 i0, i1;
 	float tmin, tmax;
 	bool answer = intersectSegmentAABB(vec3(-3, -3, -3), vec3(-2, -2, 0), vec3(-1, -1, -1), vec3(1, 1, 1), i0, i1, tmin, tmax);
-	std::cout << answer << " " << i0 << " " << i1 << "\n";
+	//std::cout << answer << " " << i0 << " " << i1 << "\n";
 	answer = intersectSegmentSphere(vec3(0, 0, 0), vec3(5, 5, 5), vec3(2, 2, 2), 5.0f, i0, i1, tmin, tmax);
 	if (!rvoExampleInitialized)
 	{
@@ -53,7 +76,7 @@ void Game::Step(float frameTime)
 
 	rvoSimulation.doStep();
 
-	float visualScale = 0.5f;
+	/*float visualScale = 0.5f;
 	for (size_t i = 0; i < l; ++i) 
 	{
 		RVO::Vector2 agentPosition = rvoSimulation.getAgentPosition(i);
@@ -63,7 +86,40 @@ void Game::Step(float frameTime)
 			visualScale * (agentPosition.x() + agentRadius), visualScale * (agentPosition.y() + agentRadius),
 			0, vec3(1, 1, 1)
 		);
+	}*/
+	quadtree->purge();
+
+	std::vector<QuadtreeDebugObject*> spheres;
+	spheres.push_back(new QuadtreeDebugObject(vec2(10, 10), 3));
+	spheres.push_back(new QuadtreeDebugObject(vec2(17, 17), 2));
+	spheres.push_back(new QuadtreeDebugObject(vec2(17, 17), 2));
+	spheres.push_back(new QuadtreeDebugObject(vec2(12, 17), 2));
+	spheres.push_back(new QuadtreeDebugObject(vec2(7, 17), 2));
+	spheres.push_back(new QuadtreeDebugObject(vec2(-8, 12), 5));
+	spheres.push_back(new QuadtreeDebugObject(vec2(0, -6), 4));
+	spheres.push_back(new QuadtreeDebugObject(vec2(-14, -13), 1));
+
+	for (size_t i = 0; i < spheres.size(); ++i)
+		quadtree->addBoundingCircle(spheres[i]->center, spheres[i]->radius, 1, spheres[i]);
+
+	drawQuadtreeNode(quadtree->_root);
+
+	vec2 origin(10, 10);
+	vec2 end(-20, -20);
+	float t;
+	QuadtreeDebugObject* result = quadtree->raycast(origin, end, 1, t);
+	if (result != nullptr)
+	{
+		vec2 center = result->center;
+		float radius = result->radius;
+		std::cout << t << std::endl;
+		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 1, vec3(1, 0, 0), 0.2f);
 	}
+
+	painter->DebugDrawLine(vec3(origin.x, origin.y, 0), vec3(end.x, end.y, 0), vec3(1, 0, 0));
+
+	for (size_t i = 0; i < spheres.size(); ++i)
+		delete spheres[i];
 
 #else
 	painter->DebugDrawRectangle(0, 0, 20, 20, 0, vec3(1, 1, 1));

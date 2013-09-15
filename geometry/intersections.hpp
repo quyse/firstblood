@@ -7,6 +7,12 @@
 
 static float epsilon = 1e-6f;
 
+inline bool testSegmentSegment1D(float a0, float a1, float b0, float b1)
+{
+	return (a1 - b0) * (a0 - b1) <= 0;
+}
+
+
 template<typename T, int N>
 inline bool testPointAABB(xvec<T, N>& point, xvec<T, N>& boxMin, xvec<T, N>& boxMax)
 {
@@ -14,6 +20,18 @@ inline bool testPointAABB(xvec<T, N>& point, xvec<T, N>& boxMin, xvec<T, N>& box
 	{
 		T pointValue = point(i);
 		if (boxMin(i) > pointValue || pointValue > boxMax(i))
+			return false;
+	}
+	return true;
+}
+
+
+template<typename T, int N>
+inline bool testAABBAABB(xvec<T, N>& bMin0, xvec<T, N>& bMax0, xvec<T, N>& bMin1, xvec<T, N>& bMax1)
+{
+	for (int i = 0; i < N; ++i)
+	{
+		if (!testSegmentSegment1D(bMin0(i), bMax0(i), bMin1(i), bMax1(i)))
 			return false;
 	}
 	return true;

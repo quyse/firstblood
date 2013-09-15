@@ -5,6 +5,8 @@
 #include "geometry/intersections.hpp"
 #include "spatial_index_interfaces.hpp"
 
+#define GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE 128
+
 class VoidQuadtreeDebugDrawer;
 
 template<class T, class DebugDrawer = VoidQuadtreeDebugDrawer>
@@ -16,7 +18,8 @@ friend DebugDrawer;
 public:
 	Quadtree(float zeroLevelSize, size_t depth, size_t maxMemory):
 		_zeroLevelSize(zeroLevelSize),
-		_depth(depth)
+		_depth(depth),
+		_sphereUidCounter(0)
 	{
 		_arena = new ArenaAllocator(maxMemory);
 		_root = allocNode(_zeroLevelSize, 0, 0);
@@ -43,6 +46,7 @@ public:
 	virtual void purge()
 	{
 		_arena->purge();
+		_sphereUidCounter = 0;
 		_root = allocNode(_zeroLevelSize, 0, 0);
 	}
 
@@ -53,20 +57,45 @@ public:
 	}
 
 
-	virtual bool getNeighbours(vec2& point, float distance, uint32_t mask, T** result, int maxResultLength)
+	virtual size_t getNeighbours(vec2& point, float distance, uint32_t mask, T** result, size_t maxResultLength)
 	{
-		return false;
+		if (maxResultLength > GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE)
+			maxResultLength = GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE;
+		PrioritizedBoundingCircle heap[GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE];
+		size_t currentResultLength = 0;
+		getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, _root, heap);
+		for (size_t i = 0; i < currentResultLength; ++i)
+			*(result + i) = heap[i].circle->entity;
+		return currentResultLength;
 	}
 
 private:
 	struct BoundingCircle
 	{
-		BoundingCircle() : next(nullptr), entity(nullptr) {};
+		BoundingCircle(size_t inUid) : next(nullptr), entity(nullptr), uid(inUid) {};
 		vec2 center;
 		float radius;
 		uint32_t mask;
 		T* entity;
+		size_t uid;
 		BoundingCircle* next;
+	};
+
+	struct PrioritizedBoundingCircle
+	{
+		PrioritizedBoundingCircle() : circle(nullptr), priority(FLT_MAX) {};
+		BoundingCircle* circle;
+		float priority;
+
+		bool operator<(const PrioritizedBoundingCircle& other)
+		{
+			if (priority < other.priority)
+				return true;
+			else if (priority > other.priority)
+				return false;
+			else
+				return circle->uid > other.circle->uid;
+		}
 	};
 
 	struct Node
@@ -89,7 +118,8 @@ private:
 private:
 	void addCircleRecursively(BoundingCircle* circle, Node* currentNode, size_t currentLevel)
 	{
-		float nextLevelSize = 0.5f * currentNode->size;
+		float size = currentNode->size;
+		float nextLevelSize = 0.5f * size;
 		float nextLevelHalfSize = 0.5f * nextLevelSize;
 		if (circle->radius >= nextLevelHalfSize || currentLevel >= _depth)
 		{
@@ -101,25 +131,25 @@ private:
 			Node* deeperNode = nullptr;
 			float x = currentNode->center.x;
 			float y = currentNode->center.y;
-			if (testPointAABB(circle->center, vec2(x - nextLevelSize, y - nextLevelSize), vec2(x, y)))
+			if (testPointAABB(circle->center, vec2(x - size, y - size), vec2(x, y)))
 			{
 				if (currentNode->topLeft == nullptr)
 					currentNode->topLeft = allocNode(nextLevelSize, x - nextLevelHalfSize, y - nextLevelHalfSize);
 				deeperNode = currentNode->topLeft;
 			}
-			else if (testPointAABB(circle->center, vec2(x + nextLevelSize, y - nextLevelSize), vec2(x, y)))
+			else if (testPointAABB(circle->center, vec2(x, y - size), vec2(x + size, y)))
 			{
 				if (currentNode->topRight == nullptr)
 					currentNode->topRight = allocNode(nextLevelSize, x + nextLevelHalfSize, y - nextLevelHalfSize);
 				deeperNode = currentNode->topRight;
 			}
-			else if (testPointAABB(circle->center, vec2(x - nextLevelSize, y + nextLevelSize), vec2(x, y)))
+			else if (testPointAABB(circle->center, vec2(x - size, y), vec2(x, y + size)))
 			{
 				if (currentNode->botLeft == nullptr)
 					currentNode->botLeft = allocNode(nextLevelSize, x - nextLevelHalfSize, y + nextLevelHalfSize);
 				deeperNode = currentNode->botLeft;
 			}
-			else if (testPointAABB(circle->center, vec2(x + nextLevelSize, y + nextLevelSize), vec2(x, y)))
+			else if (testPointAABB(circle->center, vec2(x, y), vec2(x + size, y + size)))
 			{
 				if (currentNode->botRight == nullptr)
 					currentNode->botRight = allocNode(nextLevelSize, x + nextLevelHalfSize, y + nextLevelHalfSize);
@@ -128,6 +158,8 @@ private:
 
 			if (deeperNode != nullptr)
 				addCircleRecursively(circle, deeperNode, currentLevel + 1);
+			else
+				std::cout << "Cannot add node to quadtree: " << circle->center << std::endl;
 		}
 	}
 
@@ -162,17 +194,17 @@ private:
 			currentInhabitant = currentInhabitant->next;
 		}
 
-		raycastChild(node->topLeft, clippedOrigin, clippedEnd, mask, &chosenEntity, minDist);
-		raycastChild(node->botLeft, clippedOrigin, clippedEnd, mask, &chosenEntity, minDist);
-		raycastChild(node->topRight, clippedOrigin, clippedEnd, mask, &chosenEntity, minDist);
-		raycastChild(node->botRight, clippedOrigin, clippedEnd, mask, &chosenEntity, minDist);
+		raycastChild(node->topLeft, clippedOrigin, clippedEnd, mask, chosenEntity, minDist);
+		raycastChild(node->botLeft, clippedOrigin, clippedEnd, mask, chosenEntity, minDist);
+		raycastChild(node->topRight, clippedOrigin, clippedEnd, mask, chosenEntity, minDist);
+		raycastChild(node->botRight, clippedOrigin, clippedEnd, mask, chosenEntity, minDist);
 
 		t = minDist;
 		return chosenEntity;
 	}
 
 
-	inline void raycastChild(Node* child, vec2& clippedOrigin, vec2& clippedEnd, uint32_t mask, T** chosenEntity, float& minDist)
+	inline void raycastChild(Node* child, vec2& clippedOrigin, vec2& clippedEnd, uint32_t mask, T*& chosenEntity, float& minDist)
 	{
 		if (child != nullptr)
 		{
@@ -184,6 +216,13 @@ private:
 				chosenEntity = childEntity;
 			}
 		}
+	}
+
+
+	size_t getNeighboursRecursively(vec2& point, float distance, uint32_t mask, size_t currentResultLength, size_t maxResultLength, Node* currentNode, PrioritizedBoundingCircle* heap)
+	{
+		//BoundingCircle* inhabitant =
+		return 0;
 	}
 
 
@@ -199,7 +238,7 @@ private:
 	{
 		void* memory = _arena->alloc(sizeof(BoundingCircle));
 		assert(memory != nullptr);
-		return new (memory) BoundingCircle;
+		return new (memory) BoundingCircle(++_sphereUidCounter);
 	}
 
 
@@ -208,6 +247,7 @@ private:
 	size_t _depth;
 	Node* _root;
 	ArenaAllocator* _arena;
+	size_t _sphereUidCounter;
 };
 
 

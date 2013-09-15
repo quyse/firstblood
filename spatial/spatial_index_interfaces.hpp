@@ -19,9 +19,8 @@ public:
 		return raycast(vec2(origin.x, origin.y), vec2(end.x, end.y), mask, t);
 	}
 
-	// returns true, if result buffer's overflow has occured
-	virtual bool getNeighbours(vec2& point, float distance, uint32_t mask, T** result, int maxResultLength) = 0;
-	inline bool getNeighbours(vec3& point, float distance, uint32_t mask, T** result, int maxResultLength)
+	virtual size_t getNeighbours(vec2& point, float distance, uint32_t mask, T** result, size_t maxResultLength) = 0;
+	inline size_t getNeighbours(vec3& point, float distance, uint32_t mask, T** result, size_t maxResultLength)
 	{
 		return getNeighbours(vec2(point.x, point.y), distance, mask, result, maxResultLength);
 	}

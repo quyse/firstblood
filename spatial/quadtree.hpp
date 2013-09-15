@@ -1,6 +1,7 @@
 #ifndef __FBE_QUADTREE_HPP__
 #define __FBE_QUADTREE_HPP__
 
+#include <assert.h>
 #include "memory/arena_allocator.hpp"
 #include "geometry/intersections.hpp"
 #include "spatial_index_interfaces.hpp"
@@ -32,7 +33,7 @@ public:
 	}
 	
 
-	virtual void addBoundingCircle(vec2& center, float radius, uint32_t mask, T* entity)
+	virtual void addBoundingCircle(const vec2& center, float radius, uint32_t mask, T* entity)
 	{
 		BoundingCircle* circle = allocCircle();
 		circle->center = center;
@@ -51,17 +52,18 @@ public:
 	}
 
 
-	virtual T* raycast(vec2& origin, vec2& end, uint32_t mask, float& t)
+	virtual T* raycast(const vec2& origin, const vec2& end, uint32_t mask, float& t) const
 	{
 		return raycastRecursively(origin, end, mask, t, _root);
 	}
 
 
-	virtual size_t getNeighbours(vec2& point, float distance, uint32_t mask, T** result, size_t maxResultLength)
+	virtual size_t getNeighbours(const vec2& point, float distance, uint32_t mask, T** result, size_t maxResultLength) const
 	{
+		assert(maxResultLength > 0);
 		if (maxResultLength > GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE)
 			maxResultLength = GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE;
-		PrioritizedBoundingCircle heap[GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE];
+		PrioritizedBoundingCircle heap[GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE + 1];
 		size_t currentResultLength = 0;
 		getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, _root, heap);
 		for (size_t i = 0; i < currentResultLength; ++i)
@@ -86,7 +88,7 @@ private:
 		PrioritizedBoundingCircle() : circle(nullptr), priority(FLT_MAX) {};
 		BoundingCircle* circle;
 		float priority;
-
+		
 		bool operator<(const PrioritizedBoundingCircle& other)
 		{
 			if (priority < other.priority)
@@ -164,7 +166,7 @@ private:
 	}
 
 
-	T* raycastRecursively(vec2& origin, vec2& end, uint32_t mask, float& t, Node* node)
+	T* raycastRecursively(const vec2& origin, const vec2& end, uint32_t mask, float& t, Node* node) const
 	{
 		vec2 clippedOrigin, clippedEnd;
 		float dist;
@@ -204,7 +206,7 @@ private:
 	}
 
 
-	inline void raycastChild(Node* child, vec2& clippedOrigin, vec2& clippedEnd, uint32_t mask, T*& chosenEntity, float& minDist)
+	inline void raycastChild(Node* child, vec2& clippedOrigin, vec2& clippedEnd, uint32_t mask, T*& chosenEntity, float& minDist) const
 	{
 		if (child != nullptr)
 		{
@@ -219,10 +221,54 @@ private:
 	}
 
 
-	size_t getNeighboursRecursively(vec2& point, float distance, uint32_t mask, size_t currentResultLength, size_t maxResultLength, Node* currentNode, PrioritizedBoundingCircle* heap)
+	void getNeighboursRecursively(const vec2& point, float distance, uint32_t mask, size_t& currentResultLength, size_t maxResultLength, Node* currentNode, PrioritizedBoundingCircle* heap) const
 	{
-		//BoundingCircle* inhabitant =
-		return 0;
+		if (!testAABBAABB(vec2(point.x - distance, point.y - distance), vec2(point.x + distance, point.y + distance), currentNode->min, currentNode->max))
+			return;
+		
+		BoundingCircle* inhabitant = currentNode->inhabitants;
+		while (inhabitant != nullptr)
+		{
+			if (inhabitant->mask & mask)
+			{
+				float dx = point.x - inhabitant->center.x;
+				float dy = point.y - inhabitant->center.y;
+				float radius = inhabitant->radius;
+				float sumR = distance + radius;
+				float sqrDist = dx * dx + dy * dy;
+				if (sqrDist < sumR * sumR)
+				{
+					float priority = sqrtf(sqrDist) - radius;
+					if (currentResultLength < maxResultLength)
+					{
+						(*(heap + currentResultLength)).priority = priority;
+						(*(heap + currentResultLength)).circle = inhabitant;
+						std::push_heap(heap, heap + currentResultLength + 1);
+						++currentResultLength;
+					}
+					else
+					{
+						if (priority < heap->priority)
+						{
+							std::pop_heap(heap, heap + currentResultLength);
+							(*(heap + currentResultLength - 1)).priority = priority;
+							(*(heap + currentResultLength - 1)).circle = inhabitant;
+							std::push_heap(heap, heap + currentResultLength);
+						}
+					}
+				}
+			}
+			inhabitant = inhabitant->next;
+		}
+
+		if (currentNode->topLeft != nullptr)
+			getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, currentNode->topLeft, heap);
+		if (currentNode->topRight != nullptr)
+			getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, currentNode->topRight, heap);
+		if (currentNode->botLeft != nullptr)
+			getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, currentNode->botLeft, heap);
+		if (currentNode->botRight != nullptr)
+			getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, currentNode->botRight, heap);
 	}
 
 

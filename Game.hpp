@@ -11,6 +11,7 @@
 
 struct QuadtreeDebugObject
 {
+	QuadtreeDebugObject() : center(0, 0), radius(0) {};
 	QuadtreeDebugObject(const vec2& inCenter, float inRadius) : center(inCenter), radius(inRadius) {};
 	vec2 center;
 	float radius;

@@ -92,7 +92,6 @@ void Game::Step(float frameTime)
 	std::vector<QuadtreeDebugObject*> spheres;
 	spheres.push_back(new QuadtreeDebugObject(vec2(10, 10), 3));
 	spheres.push_back(new QuadtreeDebugObject(vec2(17, 17), 2));
-	spheres.push_back(new QuadtreeDebugObject(vec2(17, 17), 2));
 	spheres.push_back(new QuadtreeDebugObject(vec2(12, 17), 2));
 	spheres.push_back(new QuadtreeDebugObject(vec2(7, 17), 2));
 	spheres.push_back(new QuadtreeDebugObject(vec2(-8, 12), 5));
@@ -117,6 +116,20 @@ void Game::Step(float frameTime)
 	}
 
 	painter->DebugDrawLine(vec3(origin.x, origin.y, 0), vec3(end.x, end.y, 0), vec3(1, 0, 0));
+
+	QuadtreeDebugObject* dudes[4];
+	vec2 testPoint(2, 2);
+	float testDist = 24.0f;
+	size_t count = quadtree->getNeighbours(testPoint, testDist, 1, &(dudes[0]), 4); 
+	painter->DebugDrawRectangle(testPoint.x - testDist, testPoint.y - testDist, testPoint.x + testDist, testPoint.y + testDist, 1, vec3(0, 0, 1), 0.2f);
+	std::cout << "Count is " << count << std::endl;
+
+	for (size_t i = 0; i < count; ++i)
+	{
+		vec2 center = dudes[i]->center;
+		float radius = dudes[i]->radius;
+		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 2, vec3(1, 1, 0), 0.2f);		
+	}
 
 	for (size_t i = 0; i < spheres.size(); ++i)
 		delete spheres[i];

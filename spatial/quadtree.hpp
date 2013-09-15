@@ -10,6 +10,8 @@
 
 class VoidQuadtreeDebugDrawer;
 
+// TODO: I really hate these ugly smelly botLeft, botRight, topLeft, topRight fields. How about a nice array of child nodes' coordinates?
+// TODO: Node's bounding box should not be 2Nx2N sized by default - stretch it only as much as necessary
 template<class T, class DebugDrawer = VoidQuadtreeDebugDrawer>
 class Quadtree : ISpatialIndex2D<T>
 {
@@ -19,8 +21,7 @@ friend DebugDrawer;
 public:
 	Quadtree(float zeroLevelSize, size_t depth, size_t maxMemory):
 		_zeroLevelSize(zeroLevelSize),
-		_depth(depth),
-		_sphereUidCounter(0)
+		_depth(depth)
 	{
 		_arena = new ArenaAllocator(maxMemory);
 		_root = allocNode(_zeroLevelSize, 0, 0);
@@ -47,12 +48,11 @@ public:
 	virtual void purge()
 	{
 		_arena->purge();
-		_sphereUidCounter = 0;
 		_root = allocNode(_zeroLevelSize, 0, 0);
 	}
 
 
-	virtual T* raycast(const vec2& origin, const vec2& end, uint32_t mask, float& t) const
+	virtual T* raycast(const vec2& origin, const vec2& end, uint32_t mask, float& t)
 	{
 		return raycastRecursively(origin, end, mask, t, _root);
 	}
@@ -71,15 +71,20 @@ public:
 		return currentResultLength;
 	}
 
+	// each node's bounding box is shrinked to exactly fit it's content
+	void minify()
+	{
+		minifyRecursively(_root);
+	}
+
 private:
 	struct BoundingCircle
 	{
-		BoundingCircle(size_t inUid) : next(nullptr), entity(nullptr), uid(inUid) {};
+		BoundingCircle() : next(nullptr), entity(nullptr) {};
 		vec2 center;
 		float radius;
 		uint32_t mask;
 		T* entity;
-		size_t uid;
 		BoundingCircle* next;
 	};
 
@@ -91,12 +96,7 @@ private:
 		
 		bool operator<(const PrioritizedBoundingCircle& other)
 		{
-			if (priority < other.priority)
-				return true;
-			else if (priority > other.priority)
-				return false;
-			else
-				return circle->uid > other.circle->uid;
+			return priority < other.priority;
 		}
 	};
 
@@ -166,7 +166,7 @@ private:
 	}
 
 
-	T* raycastRecursively(const vec2& origin, const vec2& end, uint32_t mask, float& t, Node* node) const
+	T* raycastRecursively(const vec2& origin, const vec2& end, uint32_t mask, float& t, Node* node)
 	{
 		vec2 clippedOrigin, clippedEnd;
 		float dist;
@@ -174,17 +174,17 @@ private:
 		bool intersects = intersectSegmentAABB(origin, end, node->min, node->max, clippedOrigin, clippedEnd, tmin, tmax);
 		if (!intersects)
 			return nullptr;
-
+		
 		BoundingCircle* currentInhabitant = node->inhabitants;
 		vec2 i0, i1;
 		float minDist = FLT_MAX;
 		T* chosenEntity = nullptr;
 		while (currentInhabitant != nullptr)
 		{
-			if ((mask & currentInhabitant->mask) && intersectSegmentSphere(clippedOrigin, clippedEnd, currentInhabitant->center, currentInhabitant->radius, i0, i1, tmin, tmax))
+			if ((mask & currentInhabitant->mask) && intersectSegmentSphere(origin, end, currentInhabitant->center, currentInhabitant->radius, i0, i1, tmin, tmax))
 			{
 				T* currentEntity = currentInhabitant->entity;
-				if (currentEntity->raycast(clippedOrigin, clippedEnd, dist))
+				if (currentEntity->raycast(origin, end, dist))
 				{
 					if (dist < minDist)
 					{
@@ -196,23 +196,23 @@ private:
 			currentInhabitant = currentInhabitant->next;
 		}
 
-		raycastChild(node->topLeft, clippedOrigin, clippedEnd, mask, chosenEntity, minDist);
-		raycastChild(node->botLeft, clippedOrigin, clippedEnd, mask, chosenEntity, minDist);
-		raycastChild(node->topRight, clippedOrigin, clippedEnd, mask, chosenEntity, minDist);
-		raycastChild(node->botRight, clippedOrigin, clippedEnd, mask, chosenEntity, minDist);
+		raycastChild(node->topLeft, origin, end, mask, chosenEntity, minDist);
+		raycastChild(node->botLeft, origin, end, mask, chosenEntity, minDist);
+		raycastChild(node->topRight, origin, end, mask, chosenEntity, minDist);
+		raycastChild(node->botRight, origin, end, mask, chosenEntity, minDist);
 
 		t = minDist;
 		return chosenEntity;
 	}
 
 
-	inline void raycastChild(Node* child, vec2& clippedOrigin, vec2& clippedEnd, uint32_t mask, T*& chosenEntity, float& minDist) const
+	inline void raycastChild(Node* child, const vec2& origin, const vec2& end, uint32_t mask, T*& chosenEntity, float& minDist)
 	{
 		if (child != nullptr)
 		{
 			float dist;
-			T* childEntity = raycastRecursively(clippedOrigin, clippedEnd, mask, dist, child);
-			if (dist < minDist)
+			T* childEntity = raycastRecursively(origin, end, mask, dist, child);
+			if (childEntity != nullptr && dist < minDist)
 			{
 				minDist = dist;
 				chosenEntity = childEntity;
@@ -272,6 +272,50 @@ private:
 	}
 
 
+	void minifyRecursively(Node* currentNode)
+	{
+		float minX = FLT_MAX;
+		float minY = FLT_MAX;
+		float maxX = -FLT_MAX;
+		float maxY = -FLT_MAX;
+
+		minifyChild(currentNode->botLeft, minX, minY, maxX, maxY);
+		minifyChild(currentNode->topLeft, minX, minY, maxX, maxY);
+		minifyChild(currentNode->botRight, minX, minY, maxX, maxY);
+		minifyChild(currentNode->topRight, minX, minY, maxX, maxY);
+
+		BoundingCircle* inhabitant = currentNode->inhabitants;
+		while (inhabitant != nullptr)
+		{
+			vec2& center = inhabitant->center;
+			float radius = inhabitant->radius;
+			minX = std::min(minX, center.x - radius);
+			minY = std::min(minY, center.y - radius);
+			maxX = std::max(maxX, center.x + radius);
+			maxY = std::max(maxY, center.y + radius);
+			inhabitant = inhabitant->next;
+		}
+
+		currentNode->min.x = minX;
+		currentNode->min.y = minY;
+		currentNode->max.x = maxX;
+		currentNode->max.y = maxY;
+	}
+
+
+	void minifyChild(Node* child, float& minX, float& minY, float& maxX, float& maxY)
+	{
+		if (child != nullptr)
+		{
+			minifyRecursively(child);
+			minX = std::min(minX, child->min.x);
+			minY = std::min(minY, child->min.y);
+			maxX = std::max(maxX, child->max.x);
+			maxY = std::max(maxY, child->max.y);
+		}
+	}
+
+
 	inline Node* allocNode(float size, float x, float y)
 	{
 		void* memory = _arena->alloc(sizeof(Node));
@@ -284,7 +328,7 @@ private:
 	{
 		void* memory = _arena->alloc(sizeof(BoundingCircle));
 		assert(memory != nullptr);
-		return new (memory) BoundingCircle(++_sphereUidCounter);
+		return new (memory) BoundingCircle();
 	}
 
 
@@ -293,7 +337,6 @@ private:
 	size_t _depth;
 	Node* _root;
 	ArenaAllocator* _arena;
-	size_t _sphereUidCounter;
 };
 
 

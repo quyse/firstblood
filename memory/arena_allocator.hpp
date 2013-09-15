@@ -13,7 +13,7 @@ public:
 	}
 
 
-	virtual ~ArenaAllocator()
+	~ArenaAllocator()
 	{
 		free(static_cast<void*>(_memory));
 	}

@@ -2,6 +2,8 @@
 #include "Painter.hpp"
 #include "Geometry.hpp"
 #include "geometry/intersections.hpp"
+#include <random>
+#include "profiler/scope_profiler.h"
 
 static const float pi = acos(-1.0f);
 
@@ -9,7 +11,7 @@ static bool rvoExampleInitialized = false;
 
 Game::Game()
 {
-	quadtree = new Quadtree<QuadtreeDebugObject, Game>(32, 7, 1024 * 1024);
+	quadtree = new Quadtree<QuadtreeDebugObject, Game>(32, 4, 1024 * 1024);
 }
 
 
@@ -36,7 +38,7 @@ void Game::drawQuadtreeNode(Quadtree<QuadtreeDebugObject, Game>::Node* node)
 	{
 		vec2 center = s->center;
 		float radius = s->radius;
-		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 0, vec3(1.0f, 0.8f, 0.8f));
+		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 0.5, vec3(1.0f, 0.8f, 0.8f));
 		s = s->next;
 	}
 }
@@ -90,21 +92,65 @@ void Game::Step(float frameTime)
 	quadtree->purge();
 
 	std::vector<QuadtreeDebugObject*> spheres;
-	spheres.push_back(new QuadtreeDebugObject(vec2(10, 10), 3));
-	spheres.push_back(new QuadtreeDebugObject(vec2(17, 17), 2));
-	spheres.push_back(new QuadtreeDebugObject(vec2(12, 17), 2));
-	spheres.push_back(new QuadtreeDebugObject(vec2(7, 17), 2));
-	spheres.push_back(new QuadtreeDebugObject(vec2(-8, 12), 5));
-	spheres.push_back(new QuadtreeDebugObject(vec2(0, -6), 4));
-	spheres.push_back(new QuadtreeDebugObject(vec2(-14, -13), 1));
+	//spheres.push_back(new QuadtreeDebugObject(vec2(10, 10), 3));
+	//spheres.push_back(new QuadtreeDebugObject(vec2(17, 17), 2));
+	//spheres.push_back(new QuadtreeDebugObject(vec2(12, 17), 2));
+	//spheres.push_back(new QuadtreeDebugObject(vec2(7, 17), 2));
+	//spheres.push_back(new QuadtreeDebugObject(vec2(-8, 12), 5));
+	//spheres.push_back(new QuadtreeDebugObject(vec2(0, -6), 4));
+	//spheres.push_back(new QuadtreeDebugObject(vec2(-14, -13), 1));
+	std::random_device rd0;
+    std::minstd_rand gen0(657);
+	std::random_device rd1;
+    std::minstd_rand gen1(23);
+    std::uniform_real_distribution<float> dis(-16.0f, 16.0f);
+	for (size_t i = 0; i < 200; ++i)
+	{
+		float x = dis(gen0);
+		float y = dis(gen1);
+		spheres.push_back(new QuadtreeDebugObject(vec2(x, y), 0.25));
+	}
 
 	for (size_t i = 0; i < spheres.size(); ++i)
+	{
 		quadtree->addBoundingCircle(spheres[i]->center, spheres[i]->radius, 1, spheres[i]);
+	}
+	quadtree->minify();
 
 	drawQuadtreeNode(quadtree->_root);
 
-	vec2 origin(10, 10);
-	vec2 end(-20, -20);
+	std::vector<std::pair<vec2, vec2>> raycasts;
+	for (size_t i = 0; i < 1000; ++i)
+	{
+		float x = dis(gen0);
+		float y = dis(gen1);
+		vec2 origin(x, y);
+		x = dis(gen0);
+		y = dis(gen1);
+		vec2 end(x, y);
+		raycasts.push_back(std::make_pair(origin, end));
+	}
+
+	{
+		QuadtreeDebugObject* dudes[8];
+		SCOPE_PROFILER( QUADTREE_RAYCAST );
+		for (size_t i = 0; i < raycasts.size(); ++i)
+		{
+
+			float t;
+			vec2& origin = raycasts[i].first;
+			vec2& end = raycasts[i].second;
+
+			//vec2 testPoint(2, 2);
+			//float testDist = 4.0f;
+			//size_t count = quadtree->getNeighbours(testPoint, testDist, 1, &(dudes[0]), 8); 
+
+			quadtree->raycast(origin, end, 1, t);
+		}
+	}
+
+	/*vec2 origin(-9, -9);
+	vec2 end(15, 15);
 	float t;
 	QuadtreeDebugObject* result = quadtree->raycast(origin, end, 1, t);
 	if (result != nullptr)
@@ -119,7 +165,7 @@ void Game::Step(float frameTime)
 
 	QuadtreeDebugObject* dudes[4];
 	vec2 testPoint(2, 2);
-	float testDist = 24.0f;
+	float testDist = 0.0f;
 	size_t count = quadtree->getNeighbours(testPoint, testDist, 1, &(dudes[0]), 4); 
 	painter->DebugDrawRectangle(testPoint.x - testDist, testPoint.y - testDist, testPoint.x + testDist, testPoint.y + testDist, 1, vec3(0, 0, 1), 0.2f);
 	std::cout << "Count is " << count << std::endl;
@@ -129,7 +175,7 @@ void Game::Step(float frameTime)
 		vec2 center = dudes[i]->center;
 		float radius = dudes[i]->radius;
 		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 2, vec3(1, 1, 0), 0.2f);		
-	}
+	}*/
 
 	for (size_t i = 0; i < spheres.size(); ++i)
 		delete spheres[i];

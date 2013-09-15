@@ -129,7 +129,7 @@ void Engine::Tick()
 
 	cameraBeta = clamp(cameraBeta, -1.5f, 1.5f);
 
-	vec3 cameraDirection = normalize(vec3(0.00001, 0, -0.999));//vec3(cos(cameraAlpha) * cos(cameraBeta), sin(cameraAlpha) * cos(cameraBeta), sin(cameraBeta));
+	vec3 cameraDirection = normalize(vec3(0.00001f, 0.0f, -0.999f));//vec3(cos(cameraAlpha) * cos(cameraBeta), sin(cameraAlpha) * cos(cameraBeta), sin(cameraBeta));
 	vec3 cameraRightDirection = normalize(cross(cameraDirection, vec3(0, 0, 1)));
 	vec3 cameraUpDirection = cross(cameraRightDirection, cameraDirection);
 

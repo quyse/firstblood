@@ -44,7 +44,7 @@ inline bool intersectSegmentAABB(const xvec<T, N>& a0, const xvec<T, N>& a1, con
 {
 	xvec<T, N> d = a1 - a0;
 	tmin = -FLT_MAX;
-	tmax = -FLT_MAX;
+	tmax = FLT_MAX;
 
 	for (int i = 0; i < N; ++i) 
 	{
@@ -62,21 +62,17 @@ inline bool intersectSegmentAABB(const xvec<T, N>& a0, const xvec<T, N>& a1, con
 				std::swap(t1, t2);
 			if (t1 > tmin) 
 				tmin = t1;
-			if (t2 > tmax) 
+			if (t2 < tmax) 
 				tmax = t2;
 			if (tmin > tmax) 
 				return false;
 		}
 	}
 	
-	if (tmin > 1.0f)
-		return false; 
-	if (tmin < 0.0f)
-		tmin = 0.0f;
-
-	if (tmax > 1.0f)
-		tmax = 1.0f;
-
+	if (!testSegmentSegment1D(0, 1, tmin, tmax))
+		return false;
+	tmin = clamp(tmin, (T)0.0, (T)1.0);
+	tmax = clamp(tmax, (T)0.0, (T)1.0);
 	intersection0 = a0 + d * tmin;
 	intersection1 = a0 + d * tmax;
 	return true;
@@ -98,17 +94,13 @@ inline bool intersectSegmentSphere(const xvec<T, N>& a0, const xvec<T, N>& a1, c
 	if (discr < (T)0.0) 
 		return false;
 	T sqrtDiscr = sqrtf(discr);
-
 	tmin = -b - sqrtDiscr;
-	if (tmin > (T)1.0)
-		return false;
-	if (tmin < (T)0.0) 
-		tmin = (T)0.0;
-
 	tmax = -b + sqrtDiscr;
-	if (tmax > (T)1.0)
-		tmax = (T)1.0;
 
+	if (!testSegmentSegment1D(0, 1, tmin, tmax))
+		return false;
+	tmin = clamp(tmin, (T)0.0, (T)1.0);
+	tmax = clamp(tmax, (T)0.0, (T)1.0);
 	intersection0 = a0 + d * tmin;
 	intersection1 = a0 + d * tmax;
 	return true;

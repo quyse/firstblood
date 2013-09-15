@@ -7,6 +7,19 @@
 
 static float epsilon = 1e-6f;
 
+template<typename T, int N>
+inline bool testPointAABB(xvec<T, N>& point, xvec<T, N>& boxMin, xvec<T, N>& boxMax)
+{
+	for (int i = 0; i < N; ++i)
+	{
+		T pointValue = point(i);
+		if (boxMin(i) > pointValue || pointValue > boxMax(i))
+			return false;
+	}
+	return true;
+}
+
+
 // if segment intersects AABB, sets intersection0 and intersection1 to be start/end points of intersection
 template<typename T, int N>
 inline bool intersectSegmentAABB(xvec<T, N>& a0, xvec<T, N>& a1, xvec<T, N>& boxMin, xvec<T, N>& boxMax, xvec<T, N>& intersection0, xvec<T, N>& intersection1, T& tmin, T& tmax)

@@ -13,10 +13,10 @@ public:
 	virtual void addBoundingCircle(vec2& center, float radius, uint32_t mask, T* entity) = 0;
 	virtual void purge() = 0;
 
-	virtual float raycast(vec2& origin, vec2& end, uint32_t mask, T** entity) = 0;
-	inline float raycast(vec3& origin, vec3& end, uint32_t mask, T** entity)
+	virtual T* raycast(vec2& origin, vec2& end, uint32_t mask, float& t) = 0;
+	inline bool raycast(vec3& origin, vec3& end, uint32_t mask, float& t)
 	{
-		return raycast(vec2(origin.x, origin.y), vec2(end.x, end.y), mask, entity);
+		return raycast(vec2(origin.x, origin.y), vec2(end.x, end.y), mask, t);
 	}
 
 	// returns true, if result buffer's overflow has occured

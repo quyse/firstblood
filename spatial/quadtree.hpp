@@ -6,12 +6,30 @@
 #include "geometry/intersections.hpp"
 #include "spatial_index_interfaces.hpp"
 
-#define GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE 128
+#define QUADTREE_GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE 128
+#define QUADTREE_CHILDREN_COUNT 4
+
+struct QuadtreeNodeDescription
+{
+	float x;
+	float y;
+	float minX;
+	float minY;
+	float maxX;
+	float maxY;
+};
+
+static const QuadtreeNodeDescription childNodesDescription[QUADTREE_CHILDREN_COUNT] =
+{
+	{-1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 0.0f}, 
+	{1.0f, -1.0f, 0.0f, -1.0f, 1.0f, 0.0f}, 
+	{-1.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f}, 
+	{1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f}
+};
 
 class VoidQuadtreeDebugDrawer;
 
-// TODO: I really hate these ugly smelly botLeft, botRight, topLeft, topRight fields. How about a nice array of child nodes' coordinates?
-// TODO: Node's bounding box should not be 2Nx2N sized by default - stretch it only as much as necessary
+
 template<class T, class DebugDrawer = VoidQuadtreeDebugDrawer>
 class Quadtree : ISpatialIndex2D<T>
 {
@@ -61,13 +79,13 @@ public:
 	virtual size_t getNeighbours(const vec2& point, float distance, uint32_t mask, T** result, size_t maxResultLength) const
 	{
 		assert(maxResultLength > 0);
-		if (maxResultLength > GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE)
-			maxResultLength = GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE;
-		PrioritizedBoundingCircle heap[GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE + 1];
+		if (maxResultLength > QUADTREE_GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE)
+			maxResultLength = QUADTREE_GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE;
+		PrioritizedEntity heap[QUADTREE_GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE + 1];
 		size_t currentResultLength = 0;
 		getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, _root, heap);
 		for (size_t i = 0; i < currentResultLength; ++i)
-			*(result + i) = heap[i].circle->entity;
+			*(result + i) = heap[i].entity;
 		return currentResultLength;
 	}
 
@@ -88,13 +106,13 @@ private:
 		BoundingCircle* next;
 	};
 
-	struct PrioritizedBoundingCircle
+	struct PrioritizedEntity
 	{
-		PrioritizedBoundingCircle() : circle(nullptr), priority(FLT_MAX) {};
-		BoundingCircle* circle;
+		PrioritizedEntity() : entity(nullptr), priority(FLT_MAX) {};
+		T* entity;
 		float priority;
 		
-		bool operator<(const PrioritizedBoundingCircle& other)
+		bool operator<(const PrioritizedEntity& other)
 		{
 			return priority < other.priority;
 		}
@@ -102,18 +120,17 @@ private:
 
 	struct Node
 	{
-		Node(float argSize, float x, float y) : 
-			topLeft(nullptr), topRight(nullptr), botLeft(nullptr), botRight(nullptr), inhabitants(nullptr), 
-			size(argSize), center(x, y), min(x - argSize, y - argSize), max(x + argSize, y + argSize) {};
-		Node* topLeft;
-		Node* topRight;
-		Node* botLeft;
-		Node* botRight;
-		vec2 center;
+		Node(float argSize, float x, float y) :  inhabitants(nullptr), size(argSize), min(x - argSize, y - argSize), max(x + argSize, y + argSize) 
+		{
+			for (size_t i = 0; i < QUADTREE_CHILDREN_COUNT; ++i)
+				children[i] = nullptr;
+		};
+
 		vec2 min;
 		vec2 max;
 		float size;
 		BoundingCircle* inhabitants;
+		Node* children[QUADTREE_CHILDREN_COUNT];
 	};
 
 
@@ -131,31 +148,20 @@ private:
 		else
 		{ 
 			Node* deeperNode = nullptr;
-			float x = currentNode->center.x;
-			float y = currentNode->center.y;
-			if (testPointAABB(circle->center, vec2(x - size, y - size), vec2(x, y)))
+			float x = 0.5f * (currentNode->min.x + currentNode->max.x);
+			float y = 0.5f * (currentNode->min.y + currentNode->max.y);
+			for (size_t i = 0; i < QUADTREE_CHILDREN_COUNT; ++i)
 			{
-				if (currentNode->topLeft == nullptr)
-					currentNode->topLeft = allocNode(nextLevelSize, x - nextLevelHalfSize, y - nextLevelHalfSize);
-				deeperNode = currentNode->topLeft;
-			}
-			else if (testPointAABB(circle->center, vec2(x, y - size), vec2(x + size, y)))
-			{
-				if (currentNode->topRight == nullptr)
-					currentNode->topRight = allocNode(nextLevelSize, x + nextLevelHalfSize, y - nextLevelHalfSize);
-				deeperNode = currentNode->topRight;
-			}
-			else if (testPointAABB(circle->center, vec2(x - size, y), vec2(x, y + size)))
-			{
-				if (currentNode->botLeft == nullptr)
-					currentNode->botLeft = allocNode(nextLevelSize, x - nextLevelHalfSize, y + nextLevelHalfSize);
-				deeperNode = currentNode->botLeft;
-			}
-			else if (testPointAABB(circle->center, vec2(x, y), vec2(x + size, y + size)))
-			{
-				if (currentNode->botRight == nullptr)
-					currentNode->botRight = allocNode(nextLevelSize, x + nextLevelHalfSize, y + nextLevelHalfSize);
-				deeperNode = currentNode->botRight;
+				QuadtreeNodeDescription nodeDesc = childNodesDescription[i];
+				vec2 min(x + nodeDesc.minX * size, y + nodeDesc.minY * size);
+				vec2 max(x + nodeDesc.maxX * size, y + nodeDesc.maxY * size);
+				if (testPointAABB(circle->center, min, max))
+				{
+					if (currentNode->children[i] == nullptr)
+						currentNode->children[i] = allocNode(nextLevelSize, x + nodeDesc.x * nextLevelHalfSize, y + nodeDesc.y * nextLevelHalfSize);
+					deeperNode = currentNode->children[i];
+					break;
+				}
 			}
 
 			if (deeperNode != nullptr)
@@ -177,7 +183,7 @@ private:
 		
 		BoundingCircle* currentInhabitant = node->inhabitants;
 		vec2 i0, i1;
-		float minDist = FLT_MAX;
+		t = FLT_MAX;
 		T* chosenEntity = nullptr;
 		while (currentInhabitant != nullptr)
 		{
@@ -186,9 +192,9 @@ private:
 				T* currentEntity = currentInhabitant->entity;
 				if (currentEntity->raycast(origin, end, dist))
 				{
-					if (dist < minDist)
+					if (dist < t)
 					{
-						minDist = dist;
+						t = dist;
 						chosenEntity = currentEntity;
 					}
 				}
@@ -196,32 +202,26 @@ private:
 			currentInhabitant = currentInhabitant->next;
 		}
 
-		raycastChild(node->topLeft, origin, end, mask, chosenEntity, minDist);
-		raycastChild(node->botLeft, origin, end, mask, chosenEntity, minDist);
-		raycastChild(node->topRight, origin, end, mask, chosenEntity, minDist);
-		raycastChild(node->botRight, origin, end, mask, chosenEntity, minDist);
+		for (size_t i = 0; i < QUADTREE_CHILDREN_COUNT; ++i)
+		{
+			Node* child = node->children[i];
+			if (child != nullptr)
+			{
+				float dist;
+				T* childEntity = raycastRecursively(origin, end, mask, dist, child);
+				if (childEntity != nullptr && dist < t)
+				{
+					t = dist;
+					chosenEntity = childEntity;
+				}
+			}
+		}
 
-		t = minDist;
 		return chosenEntity;
 	}
 
 
-	inline void raycastChild(Node* child, const vec2& origin, const vec2& end, uint32_t mask, T*& chosenEntity, float& minDist)
-	{
-		if (child != nullptr)
-		{
-			float dist;
-			T* childEntity = raycastRecursively(origin, end, mask, dist, child);
-			if (childEntity != nullptr && dist < minDist)
-			{
-				minDist = dist;
-				chosenEntity = childEntity;
-			}
-		}
-	}
-
-
-	void getNeighboursRecursively(const vec2& point, float distance, uint32_t mask, size_t& currentResultLength, size_t maxResultLength, Node* currentNode, PrioritizedBoundingCircle* heap) const
+	void getNeighboursRecursively(const vec2& point, float distance, uint32_t mask, size_t& currentResultLength, size_t maxResultLength, Node* currentNode, PrioritizedEntity* heap) const
 	{
 		if (!testAABBAABB(vec2(point.x - distance, point.y - distance), vec2(point.x + distance, point.y + distance), currentNode->min, currentNode->max))
 			return;
@@ -242,7 +242,7 @@ private:
 					if (currentResultLength < maxResultLength)
 					{
 						(*(heap + currentResultLength)).priority = priority;
-						(*(heap + currentResultLength)).circle = inhabitant;
+						(*(heap + currentResultLength)).entity = inhabitant->entity;
 						std::push_heap(heap, heap + currentResultLength + 1);
 						++currentResultLength;
 					}
@@ -252,7 +252,7 @@ private:
 						{
 							std::pop_heap(heap, heap + currentResultLength);
 							(*(heap + currentResultLength - 1)).priority = priority;
-							(*(heap + currentResultLength - 1)).circle = inhabitant;
+							(*(heap + currentResultLength - 1)).entity = inhabitant->entity;
 							std::push_heap(heap, heap + currentResultLength);
 						}
 					}
@@ -261,14 +261,12 @@ private:
 			inhabitant = inhabitant->next;
 		}
 
-		if (currentNode->topLeft != nullptr)
-			getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, currentNode->topLeft, heap);
-		if (currentNode->topRight != nullptr)
-			getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, currentNode->topRight, heap);
-		if (currentNode->botLeft != nullptr)
-			getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, currentNode->botLeft, heap);
-		if (currentNode->botRight != nullptr)
-			getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, currentNode->botRight, heap);
+		for (size_t i = 0; i < QUADTREE_CHILDREN_COUNT; ++i)
+		{
+			Node* child = currentNode->children[i];
+			if (child != nullptr)
+				getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, child, heap);
+		}
 	}
 
 
@@ -279,10 +277,18 @@ private:
 		float maxX = -FLT_MAX;
 		float maxY = -FLT_MAX;
 
-		minifyChild(currentNode->botLeft, minX, minY, maxX, maxY);
-		minifyChild(currentNode->topLeft, minX, minY, maxX, maxY);
-		minifyChild(currentNode->botRight, minX, minY, maxX, maxY);
-		minifyChild(currentNode->topRight, minX, minY, maxX, maxY);
+		for (size_t i = 0; i < QUADTREE_CHILDREN_COUNT; ++i)
+		{
+			Node* child = currentNode->children[i];
+			if (child != nullptr)
+			{
+				minifyRecursively(child);
+				minX = std::min(minX, child->min.x);
+				minY = std::min(minY, child->min.y);
+				maxX = std::max(maxX, child->max.x);
+				maxY = std::max(maxY, child->max.y);
+			}
+		}
 
 		BoundingCircle* inhabitant = currentNode->inhabitants;
 		while (inhabitant != nullptr)
@@ -300,19 +306,6 @@ private:
 		currentNode->min.y = minY;
 		currentNode->max.x = maxX;
 		currentNode->max.y = maxY;
-	}
-
-
-	void minifyChild(Node* child, float& minX, float& minY, float& maxX, float& maxY)
-	{
-		if (child != nullptr)
-		{
-			minifyRecursively(child);
-			minX = std::min(minX, child->min.x);
-			minY = std::min(minY, child->min.y);
-			maxX = std::max(maxX, child->max.x);
-			maxY = std::max(maxY, child->max.y);
-		}
 	}
 
 

@@ -7,7 +7,8 @@
 
 #include "Engine.hpp"
 #include "spatial/quadtree.hpp"
-#include "rvo/RVO.h"
+#include "rvo/simulator.hpp"
+#include "rvo/agent.hpp"
 
 struct QuadtreeDebugObject
 {
@@ -34,10 +35,10 @@ protected:
 	void drawQuadtreeNode(Quadtree<QuadtreeDebugObject, Game>::Node*);
 
 protected:
-	RVO::RVOSimulator rvoSimulation;
-	std::vector<RVO::Vector2> goals;
+	RVO::Simulator* rvoSimulation;
+	std::vector<RVO::Agent*> agents;
+	std::vector<vec2> goals;
 	Quadtree<QuadtreeDebugObject, Game>* quadtree;
-
 };
 
 #endif

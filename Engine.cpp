@@ -162,7 +162,7 @@ void Engine::Tick()
 
 	context->Reset();
 
-	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition, cameraPosition + cameraDirection, vec3(0, 0, 1));
+	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition, cameraPosition + cameraDirection, vec3(0, 1, -1));
 //	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition = vec3(10, 10, 50), vec3(0, 0, 0), vec3(0, 0, 1));
 	mat4x4 projMatrix = CreateProjectionPerspectiveFovMatrix(3.1415926535897932f / 4, float(screenWidth) / float(screenHeight), 0.1f, 1000.0f);
 

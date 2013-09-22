@@ -12,26 +12,25 @@ static bool rvoExampleInitialized = false;
 Game::Game()
 {
 	quadtree = new Quadtree<QuadtreeDebugObject, Game>(32, 4, 1024 * 1024);
+	rvoSimulation = new RVO::Simulator();
 }
 
 
 Game::~Game()
 {
 	delete quadtree;
+	delete rvoSimulation;
 }
 
 
 void Game::drawQuadtreeNode(Quadtree<QuadtreeDebugObject, Game>::Node* node)
 {
 	painter->DebugDrawRectangle(node->min.x, node->min.y, node->max.x, node->max.y, 0, vec3(0, 1, 0));
-	if (node->botLeft != nullptr)
-		drawQuadtreeNode(node->botLeft);
-	if (node->topLeft != nullptr)
-		drawQuadtreeNode(node->topLeft);
-	if (node->topRight != nullptr)
-		drawQuadtreeNode(node->topRight);
-	if (node->botRight != nullptr)
-		drawQuadtreeNode(node->botRight);
+	for (size_t i = 0; i < 4; ++i)
+	{
+		if (node->children[i] != nullptr)
+			drawQuadtreeNode(node->children[i]);
+	}
 
 	Quadtree<QuadtreeDebugObject, Game>::BoundingCircle* s = node->inhabitants;
 	while (s != nullptr)
@@ -54,51 +53,62 @@ void Game::Step(float frameTime)
 	answer = intersectSegmentSphere(vec3(0, 0, 0), vec3(5, 5, 5), vec3(2, 2, 2), 5.0f, i0, i1, tmin, tmax);
 	if (!rvoExampleInitialized)
 	{
-		rvoSimulation.setAgentDefaults(15.0f, 10, 10.0f, 10.0f, 1.5f, 2.0f);
-		for (size_t i = 0; i < 125; ++i) 
+		int numAgents = 16;
+		bool addObstacle = true;
+		rvoSimulation->setAgentDefaults(10.0f, 8, 32.0f, 50.0f, 1.5f, 2.0f);
+		for (size_t i = 0; i < numAgents; ++i) 
 		{
-			rvoSimulation.addAgent(100.0f * RVO::Vector2(std::cos(i * 2.0f * pi / 125.0f), std::sin(i * 2.0f * pi / 125.0f)));
-			goals.push_back(-rvoSimulation.getAgentPosition(i));
+			RVO::Agent* agent = rvoSimulation->addAgent(vec2(std::cos(i * 2.0f * pi / numAgents + 0.01f), std::sin(i * 2.0f * pi / numAgents + 0.01f)) * 100.0f);
+			agent->maxSpeed = 0.5f;
+			goals.push_back(-agent->position);
+			agents.push_back(agent);
+		}
+		if (addObstacle)
+		{
+			RVO::Agent* agent = rvoSimulation->addAgent(vec2(0, 0), 20, 32, 10.0f, 10.0f, 8.0f, 0.1f);
+			agent->isStatic = true;
+			goals.push_back(-agent->position);
+			agents.push_back(agent);
 		}
 		rvoExampleInitialized = true;
 	}
-	
-	rvoSimulation.setTimeStep(0.1f);
 
-	size_t l = rvoSimulation.getNumAgents();
+	size_t l = rvoSimulation->getNumAgents();
 	for (size_t i = 0; i < l; ++i) 
 	{
-		RVO::Vector2 goalVector = goals[i] - rvoSimulation.getAgentPosition(i);
-		if (RVO::absSq(goalVector) > 1.0f) 
+		RVO::Agent* agent = agents[i];
+		vec2 goalVector = goals[i] - agent->position;
+		if (length2(goalVector) > 1.0f) 
 		{
-			goalVector = RVO::normalize(goalVector);
+			goalVector = normalize(goalVector);
 		}
-		rvoSimulation.setAgentPrefVelocity(i, goalVector);
+		agent->prefVelocity = goalVector;
 	}
 
-	rvoSimulation.doStep();
+	rvoSimulation->doStep(0.2f);
 
-	/*float visualScale = 0.5f;
+	float visualScale = 0.3f;
 	for (size_t i = 0; i < l; ++i) 
 	{
-		RVO::Vector2 agentPosition = rvoSimulation.getAgentPosition(i);
-		float agentRadius = rvoSimulation.getAgentRadius(i);
+		RVO::Agent* agent = agents[i];
+		vec2 agentPosition = agent->position;
+		float agentRadius = agent->radius;
 		painter->DebugDrawRectangle(
-			visualScale * (agentPosition.x() - agentRadius), visualScale * (agentPosition.y() - agentRadius),
-			visualScale * (agentPosition.x() + agentRadius), visualScale * (agentPosition.y() + agentRadius),
+			visualScale * (agentPosition.x - agentRadius), visualScale * (agentPosition.y - agentRadius),
+			visualScale * (agentPosition.x + agentRadius), visualScale * (agentPosition.y + agentRadius),
 			0, vec3(1, 1, 1)
 		);
-	}*/
+	}
 	quadtree->purge();
 
 	std::vector<QuadtreeDebugObject*> spheres;
-	//spheres.push_back(new QuadtreeDebugObject(vec2(10, 10), 3));
-	//spheres.push_back(new QuadtreeDebugObject(vec2(17, 17), 2));
-	//spheres.push_back(new QuadtreeDebugObject(vec2(12, 17), 2));
-	//spheres.push_back(new QuadtreeDebugObject(vec2(7, 17), 2));
-	//spheres.push_back(new QuadtreeDebugObject(vec2(-8, 12), 5));
-	//spheres.push_back(new QuadtreeDebugObject(vec2(0, -6), 4));
-	//spheres.push_back(new QuadtreeDebugObject(vec2(-14, -13), 1));
+	spheres.push_back(new QuadtreeDebugObject(vec2(10, 10), 3));
+	spheres.push_back(new QuadtreeDebugObject(vec2(17, 17), 2));
+	spheres.push_back(new QuadtreeDebugObject(vec2(12, 17), 2));
+	spheres.push_back(new QuadtreeDebugObject(vec2(7, 17), 2));
+	spheres.push_back(new QuadtreeDebugObject(vec2(-8, 12), 5));
+	spheres.push_back(new QuadtreeDebugObject(vec2(0, -6), 4));
+	spheres.push_back(new QuadtreeDebugObject(vec2(-14, -13), 1));
 	std::random_device rd0;
     std::minstd_rand gen0(657);
 	std::random_device rd1;
@@ -108,7 +118,7 @@ void Game::Step(float frameTime)
 	{
 		float x = dis(gen0);
 		float y = dis(gen1);
-		spheres.push_back(new QuadtreeDebugObject(vec2(x, y), 0.25));
+		//spheres.push_back(new QuadtreeDebugObject(vec2(x, y), 0.25));
 	}
 
 	for (size_t i = 0; i < spheres.size(); ++i)
@@ -117,9 +127,9 @@ void Game::Step(float frameTime)
 	}
 	quadtree->minify();
 
-	drawQuadtreeNode(quadtree->_root);
+	//drawQuadtreeNode(quadtree->_root);
 
-	std::vector<std::pair<vec2, vec2>> raycasts;
+	/*std::vector<std::pair<vec2, vec2>> raycasts;
 	for (size_t i = 0; i < 1000; ++i)
 	{
 		float x = dis(gen0);
@@ -147,10 +157,10 @@ void Game::Step(float frameTime)
 
 			quadtree->raycast(origin, end, 1, t);
 		}
-	}
+	}*/
 
-	/*vec2 origin(-9, -9);
-	vec2 end(15, 15);
+	/*vec2 origin(-20, 18);
+	vec2 end(20, 18);
 	float t;
 	QuadtreeDebugObject* result = quadtree->raycast(origin, end, 1, t);
 	if (result != nullptr)
@@ -161,9 +171,9 @@ void Game::Step(float frameTime)
 		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 1, vec3(1, 0, 0), 0.2f);
 	}
 
-	painter->DebugDrawLine(vec3(origin.x, origin.y, 0), vec3(end.x, end.y, 0), vec3(1, 0, 0));
+	painter->DebugDrawLine(vec3(origin.x, origin.y, 0), vec3(end.x, end.y, 0), vec3(1, 0, 0));*/
 
-	QuadtreeDebugObject* dudes[4];
+	/*QuadtreeDebugObject* dudes[4];
 	vec2 testPoint(2, 2);
 	float testDist = 0.0f;
 	size_t count = quadtree->getNeighbours(testPoint, testDist, 1, &(dudes[0]), 4); 

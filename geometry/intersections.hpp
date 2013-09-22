@@ -4,8 +4,7 @@
 #include "../../inanity/math/basic.hpp"
 #include <math.h>
 #include <algorithm>
-
-static float epsilon = 1e-6f;
+#include "constants.hpp"
 
 inline bool testSegmentSegment1D(float a0, float a1, float b0, float b1)
 {
@@ -48,7 +47,7 @@ inline bool intersectSegmentAABB(const xvec<T, N>& a0, const xvec<T, N>& a1, con
 
 	for (int i = 0; i < N; ++i) 
 	{
-		if (fabsf(d(i)) < (T)epsilon) 
+		if (fabsf(d(i)) < (T)EPSILON) 
 		{
 			if (a0(i) < boxMin(i) || a0(i) > boxMax(i)) 
 				return false;

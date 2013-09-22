@@ -30,6 +30,9 @@ static const QuadtreeNodeDescription childNodesDescription[QUADTREE_CHILDREN_COU
 class VoidQuadtreeDebugDrawer;
 
 
+// this quadtree is a loose one (e.g. all nodes are doubled in size)
+// google "loose octree" to find out why it can be nice
+// call optimize when builing is done to shrink nodes, if you want
 template<class T, class DebugDrawer = VoidQuadtreeDebugDrawer>
 class Quadtree : ISpatialIndex2D<T>
 {
@@ -52,14 +55,15 @@ public:
 	}
 	
 
-	virtual void addBoundingCircle(const vec2& center, float radius, uint32_t mask, T* entity)
+	virtual void build(T* objects, size_t objectsCount)
 	{
-		BoundingCircle* circle = allocCircle();
-		circle->center = center;
-		circle->radius = radius;
-		circle->mask = mask;
-		circle->entity = entity;
-		addCircleRecursively(circle, _root, 0);
+		for (size_t i = 0; i < objectsCount; ++i)
+		{
+			T* object = objects + i;
+			float radius = object->getRadius();
+			vec2 position = object->getPosition();
+			addObjectRecursively(objects + i, radius, position, _root, 0);
+		}
 	}
 
 
@@ -89,21 +93,25 @@ public:
 		return currentResultLength;
 	}
 
+
 	// each node's bounding box is shrinked to exactly fit it's content
-	void minify()
+	void optimize()
 	{
 		minifyRecursively(_root);
 	}
 
+
 private:
-	struct BoundingCircle
+	struct EntityList
 	{
-		BoundingCircle() : next(nullptr), entity(nullptr) {};
-		vec2 center;
-		float radius;
-		uint32_t mask;
+		EntityList() : entity(nullptr), next(nullptr) {};
+
 		T* entity;
-		BoundingCircle* next;
+		EntityList* next;
+
+		inline uint32_t getMask() { return entity->getMask(); }
+		inline float getRadius() { return entity->getRadius(); }
+		inline vec2 getPosition() { return entity->getPosition(); }
 	};
 
 	struct PrioritizedEntity
@@ -118,6 +126,7 @@ private:
 		}
 	};
 
+
 	struct Node
 	{
 		Node(float argSize, float x, float y) :  inhabitants(nullptr), size(argSize), min(x - argSize, y - argSize), max(x + argSize, y + argSize) 
@@ -129,21 +138,23 @@ private:
 		vec2 min;
 		vec2 max;
 		float size;
-		BoundingCircle* inhabitants;
+		EntityList* inhabitants;
 		Node* children[QUADTREE_CHILDREN_COUNT];
 	};
 
 
 private:
-	void addCircleRecursively(BoundingCircle* circle, Node* currentNode, size_t currentLevel)
+	void addObjectRecursively(T* object, float radius, const vec2& position, Node* currentNode, size_t currentLevel)
 	{
 		float size = currentNode->size;
 		float nextLevelSize = 0.5f * size;
 		float nextLevelHalfSize = 0.5f * nextLevelSize;
-		if (circle->radius >= nextLevelHalfSize || currentLevel >= _depth)
+		if (radius >= nextLevelHalfSize || currentLevel >= _depth)
 		{
-			circle->next = currentNode->inhabitants;
-			currentNode->inhabitants = circle;
+			EntityList* wrapper = allocCircle();
+			wrapper->entity = object;
+			wrapper->next = currentNode->inhabitants;
+			currentNode->inhabitants = wrapper;
 		}
 		else
 		{ 
@@ -155,7 +166,7 @@ private:
 				QuadtreeNodeDescription nodeDesc = childNodesDescription[i];
 				vec2 min(x + nodeDesc.minX * size, y + nodeDesc.minY * size);
 				vec2 max(x + nodeDesc.maxX * size, y + nodeDesc.maxY * size);
-				if (testPointAABB(circle->center, min, max))
+				if (testPointAABB(position, min, max))
 				{
 					if (currentNode->children[i] == nullptr)
 						currentNode->children[i] = allocNode(nextLevelSize, x + nodeDesc.x * nextLevelHalfSize, y + nodeDesc.y * nextLevelHalfSize);
@@ -165,9 +176,9 @@ private:
 			}
 
 			if (deeperNode != nullptr)
-				addCircleRecursively(circle, deeperNode, currentLevel + 1);
+				addObjectRecursively(object, radius, position, deeperNode, currentLevel + 1);
 			else
-				std::cout << "Cannot add node to quadtree: " << circle->center << std::endl;
+				std::cout << "Cannot add object to quadtree: " << position << std::endl;
 		}
 	}
 
@@ -181,13 +192,13 @@ private:
 		if (!intersects)
 			return nullptr;
 		
-		BoundingCircle* currentInhabitant = node->inhabitants;
+		EntityList* currentInhabitant = node->inhabitants;
 		vec2 i0, i1;
 		t = FLT_MAX;
 		T* chosenEntity = nullptr;
 		while (currentInhabitant != nullptr)
 		{
-			if ((mask & currentInhabitant->mask) && intersectSegmentSphere(origin, end, currentInhabitant->center, currentInhabitant->radius, i0, i1, tmin, tmax))
+			if ((mask & currentInhabitant->getMask()) && intersectSegmentSphere(origin, end, currentInhabitant->getPosition(), currentInhabitant->getRadius(), i0, i1, tmin, tmax))
 			{
 				T* currentEntity = currentInhabitant->entity;
 				if (currentEntity->raycast(origin, end, dist))
@@ -226,14 +237,15 @@ private:
 		if (!testAABBAABB(vec2(point.x - distance, point.y - distance), vec2(point.x + distance, point.y + distance), currentNode->min, currentNode->max))
 			return;
 		
-		BoundingCircle* inhabitant = currentNode->inhabitants;
+		EntityList* inhabitant = currentNode->inhabitants;
 		while (inhabitant != nullptr)
 		{
-			if (inhabitant->mask & mask)
+			if (inhabitant->getMask() & mask)
 			{
-				float dx = point.x - inhabitant->center.x;
-				float dy = point.y - inhabitant->center.y;
-				float radius = inhabitant->radius;
+				vec2& center = inhabitant->getPosition();
+				float dx = point.x - center.x;
+				float dy = point.y - center.y;
+				float radius = inhabitant->getRadius();
 				float sumR = distance + radius;
 				float sqrDist = dx * dx + dy * dy;
 				if (sqrDist < sumR * sumR)
@@ -290,11 +302,11 @@ private:
 			}
 		}
 
-		BoundingCircle* inhabitant = currentNode->inhabitants;
+		EntityList* inhabitant = currentNode->inhabitants;
 		while (inhabitant != nullptr)
 		{
-			vec2& center = inhabitant->center;
-			float radius = inhabitant->radius;
+			vec2& center = inhabitant->getPosition();
+			float radius = inhabitant->getRadius();
 			minX = std::min(minX, center.x - radius);
 			minY = std::min(minY, center.y - radius);
 			maxX = std::max(maxX, center.x + radius);
@@ -317,11 +329,11 @@ private:
 	}
 
 
-	inline BoundingCircle* allocCircle()
+	inline EntityList* allocCircle()
 	{
-		void* memory = _arena->alloc(sizeof(BoundingCircle));
+		void* memory = _arena->alloc(sizeof(EntityList));
 		assert(memory != nullptr);
-		return new (memory) BoundingCircle();
+		return new (memory) EntityList();
 	}
 
 

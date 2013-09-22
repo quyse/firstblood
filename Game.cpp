@@ -32,11 +32,11 @@ void Game::drawQuadtreeNode(Quadtree<QuadtreeDebugObject, Game>::Node* node)
 			drawQuadtreeNode(node->children[i]);
 	}
 
-	Quadtree<QuadtreeDebugObject, Game>::BoundingCircle* s = node->inhabitants;
+	Quadtree<QuadtreeDebugObject, Game>::EntityList* s = node->inhabitants;
 	while (s != nullptr)
 	{
-		vec2 center = s->center;
-		float radius = s->radius;
+		vec2 center = s->getPosition();
+		float radius = s->getRadius();
 		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 0.5, vec3(1.0f, 0.8f, 0.8f));
 		s = s->next;
 	}
@@ -87,7 +87,7 @@ void Game::Step(float frameTime)
 
 	rvoSimulation->doStep(0.2f);
 
-	float visualScale = 0.3f;
+	/*float visualScale = 0.3f;
 	for (size_t i = 0; i < l; ++i) 
 	{
 		RVO::Agent* agent = agents[i];
@@ -98,17 +98,17 @@ void Game::Step(float frameTime)
 			visualScale * (agentPosition.x + agentRadius), visualScale * (agentPosition.y + agentRadius),
 			0, vec3(1, 1, 1)
 		);
-	}
+	}*/
 	quadtree->purge();
 
-	std::vector<QuadtreeDebugObject*> spheres;
-	spheres.push_back(new QuadtreeDebugObject(vec2(10, 10), 3));
-	spheres.push_back(new QuadtreeDebugObject(vec2(17, 17), 2));
-	spheres.push_back(new QuadtreeDebugObject(vec2(12, 17), 2));
-	spheres.push_back(new QuadtreeDebugObject(vec2(7, 17), 2));
-	spheres.push_back(new QuadtreeDebugObject(vec2(-8, 12), 5));
-	spheres.push_back(new QuadtreeDebugObject(vec2(0, -6), 4));
-	spheres.push_back(new QuadtreeDebugObject(vec2(-14, -13), 1));
+	std::vector<QuadtreeDebugObject> spheres;
+	spheres.push_back(QuadtreeDebugObject(vec2(10, 10), 3));
+	spheres.push_back(QuadtreeDebugObject(vec2(17, 17), 2));
+	spheres.push_back(QuadtreeDebugObject(vec2(12, 17), 2));
+	spheres.push_back(QuadtreeDebugObject(vec2(7, 17), 2));
+	spheres.push_back(QuadtreeDebugObject(vec2(-8, 12), 5));
+	spheres.push_back(QuadtreeDebugObject(vec2(0, -6), 4));
+	spheres.push_back(QuadtreeDebugObject(vec2(-14, -13), 1));
 	std::random_device rd0;
     std::minstd_rand gen0(657);
 	std::random_device rd1;
@@ -118,16 +118,13 @@ void Game::Step(float frameTime)
 	{
 		float x = dis(gen0);
 		float y = dis(gen1);
-		spheres.push_back(new QuadtreeDebugObject(vec2(x, y), 0.25));
+		//spheres.push_back(new QuadtreeDebugObject(vec2(x, y), 0.25));
 	}
 
-	for (size_t i = 0; i < spheres.size(); ++i)
-	{
-		quadtree->addBoundingCircle(spheres[i]->center, spheres[i]->radius, 1, spheres[i]);
-	}
-	quadtree->minify();
+	quadtree->build(&(spheres[0]), spheres.size());
+	quadtree->optimize();
 
-	//drawQuadtreeNode(quadtree->_root);
+	drawQuadtreeNode(quadtree->_root);
 
 	// RAYCAST STRESS TEST
 	/*std::vector<std::pair<vec2, vec2>> raycasts;
@@ -189,9 +186,6 @@ void Game::Step(float frameTime)
 		float radius = dudes[i]->radius;
 		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 2, vec3(1, 1, 0), 0.2f);		
 	}*/
-
-	for (size_t i = 0; i < spheres.size(); ++i)
-		delete spheres[i];
 
 #else
 	painter->DebugDrawRectangle(0, 0, 20, 20, 0, vec3(1, 1, 1));

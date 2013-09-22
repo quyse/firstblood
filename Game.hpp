@@ -22,6 +22,21 @@ struct QuadtreeDebugObject
 		float tmax;
 		return intersectSegmentSphere(origin, end, center, radius, i0, i1, dist, tmax);
 	}
+
+	inline float getRadius()
+	{
+		return radius;
+	}
+
+	inline vec2 getPosition()
+	{
+		return center;
+	}
+
+	inline uint32_t getMask()
+	{
+		return 1;
+	}
 };
 
 class Game : public Engine

@@ -8,7 +8,6 @@ namespace RVO
 
 	class Simulator;
 	class KdTree;
-	class Obstacle;
 
 	class Agent 
 	{
@@ -21,7 +20,6 @@ namespace RVO
 		void computeNeighbors(KdTree* spatialIndex);
 		void computeNewVelocity(float dt);
 		void insertAgentNeighbor(const Agent *agent, float &rangeSq);
-		void insertObstacleNeighbor(const Obstacle *obstacle, float rangeSq);
 		void update(float dt);
 
 
@@ -30,7 +28,6 @@ namespace RVO
 		vec2 prefVelocity;
 		float radius;
 		float timeHorizon;
-		float timeHorizonObst;
 		float neighborDist;
 		size_t maxNeighbors;
 		float maxSpeed;
@@ -42,7 +39,6 @@ namespace RVO
 		vec2 newVelocity_;
 		// to be cleared
 		std::vector<std::pair<float, const Agent*>>* agentNeighbors_; 
-		std::vector<std::pair<float, const Obstacle*>>* obstacleNeighbors_;
 
 	};
 

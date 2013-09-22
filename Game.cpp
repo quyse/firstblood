@@ -53,9 +53,9 @@ void Game::Step(float frameTime)
 	answer = intersectSegmentSphere(vec3(0, 0, 0), vec3(5, 5, 5), vec3(2, 2, 2), 5.0f, i0, i1, tmin, tmax);
 	if (!rvoExampleInitialized)
 	{
-		int numAgents = 16;
+		int numAgents = 4;
 		bool addObstacle = true;
-		rvoSimulation->setAgentDefaults(10.0f, 8, 32.0f, 50.0f, 1.5f, 2.0f);
+		rvoSimulation->setAgentDefaults(10.0f, 16, 32.0f, 1.5f, 2.0f);
 		for (size_t i = 0; i < numAgents; ++i) 
 		{
 			RVO::Agent* agent = rvoSimulation->addAgent(vec2(std::cos(i * 2.0f * pi / numAgents + 0.01f), std::sin(i * 2.0f * pi / numAgents + 0.01f)) * 100.0f);
@@ -118,7 +118,7 @@ void Game::Step(float frameTime)
 	{
 		float x = dis(gen0);
 		float y = dis(gen1);
-		//spheres.push_back(new QuadtreeDebugObject(vec2(x, y), 0.25));
+		spheres.push_back(new QuadtreeDebugObject(vec2(x, y), 0.25));
 	}
 
 	for (size_t i = 0; i < spheres.size(); ++i)
@@ -129,6 +129,7 @@ void Game::Step(float frameTime)
 
 	//drawQuadtreeNode(quadtree->_root);
 
+	// RAYCAST STRESS TEST
 	/*std::vector<std::pair<vec2, vec2>> raycasts;
 	for (size_t i = 0; i < 1000; ++i)
 	{
@@ -159,6 +160,7 @@ void Game::Step(float frameTime)
 		}
 	}*/
 
+	// RAYCAST TEST
 	/*vec2 origin(-20, 18);
 	vec2 end(20, 18);
 	float t;
@@ -173,10 +175,11 @@ void Game::Step(float frameTime)
 
 	painter->DebugDrawLine(vec3(origin.x, origin.y, 0), vec3(end.x, end.y, 0), vec3(1, 0, 0));*/
 
-	/*QuadtreeDebugObject* dudes[4];
-	vec2 testPoint(2, 2);
-	float testDist = 0.0f;
-	size_t count = quadtree->getNeighbours(testPoint, testDist, 1, &(dudes[0]), 4); 
+	// NEAREST NEIGHBOURS TEST
+	/*QuadtreeDebugObject* dudes[256];
+	vec2 testPoint(6, 6);
+	float testDist = 10.0f;
+	size_t count = quadtree->getNeighbours(testPoint, testDist, 1, &(dudes[0]), 256); 
 	painter->DebugDrawRectangle(testPoint.x - testDist, testPoint.y - testDist, testPoint.x + testDist, testPoint.y + testDist, 1, vec3(0, 0, 1), 0.2f);
 	std::cout << "Count is " << count << std::endl;
 

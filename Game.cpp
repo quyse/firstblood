@@ -53,7 +53,7 @@ void Game::Step(float frameTime)
 	answer = intersectSegmentSphere(vec3(0, 0, 0), vec3(5, 5, 5), vec3(2, 2, 2), 5.0f, i0, i1, tmin, tmax);
 	if (!rvoExampleInitialized)
 	{
-		int numAgents = 4;
+		int numAgents = 8;
 		bool addObstacle = true;
 		rvoSimulation->setAgentDefaults(10.0f, 16, 32.0f, 1.5f, 2.0f);
 		for (size_t i = 0; i < numAgents; ++i) 
@@ -66,7 +66,7 @@ void Game::Step(float frameTime)
 		if (addObstacle)
 		{
 			RVO::Agent* agent = rvoSimulation->addAgent(vec2(0, 0), 20, 32, 10.0f, 10.0f, 8.0f, 0.1f);
-			agent->isStatic = true;
+			agent->immobilized = true;
 			goals.push_back(-agent->position);
 			agents.push_back(agent);
 		}

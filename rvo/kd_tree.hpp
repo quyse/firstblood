@@ -13,6 +13,7 @@ namespace RVO {
 		friend class Agent;
 		friend class Simulator;
 
+
 	private:
 		static const size_t MAX_LEAF_SIZE = 10;
 
@@ -29,14 +30,17 @@ namespace RVO {
 		};
 
 
-	private:
+	public:
 		void buildAgentTree(std::vector<Agent*>& agents, size_t agentsCount);
+		size_t getNeighbours(Agent* agent, float& rangeSq, size_t maxResultLength, std::pair<float, Agent*>* result) const;
+
+
+	private:
 		void buildAgentTreeRecursive(size_t begin, size_t end, size_t node);
+		void queryAgentTreeRecursive(Agent* agent, float& rangeSq, size_t node, size_t& currentResultLength, size_t maxResultLength, std::pair<float, Agent*>* result) const;
 
-		void computeAgentNeighbors(Agent *agent, float &rangeSq) const;
 
-		void queryAgentTreeRecursive(Agent* agent, float& rangeSq, size_t node) const;
-
+	private:
 		std::vector<Agent*> agents_;
 		std::vector<AgentTreeNode> agentTree_;
 	};

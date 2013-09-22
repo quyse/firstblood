@@ -17,9 +17,7 @@ namespace RVO
 
 	private:
 		explicit Agent();
-		void computeNeighbors(KdTree* spatialIndex);
-		void computeNewVelocity(float dt);
-		void insertAgentNeighbor(const Agent *agent, float &rangeSq);
+		void computeNewVelocity(float dt, KdTree* spatialIndex);
 		void update(float dt);
 
 
@@ -31,14 +29,12 @@ namespace RVO
 		float neighborDist;
 		size_t maxNeighbors;
 		float maxSpeed;
-		bool isStatic;
+		bool immobilized;
 
 
 	private:
 		vec2 velocity_;
 		vec2 newVelocity_;
-		// to be cleared
-		std::vector<std::pair<float, const Agent*>>* agentNeighbors_; 
 
 	};
 

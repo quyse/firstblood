@@ -3,31 +3,29 @@
 #include "rvo/simulator.hpp"
 #include "geometry/distance.hpp"
 
+#define GET_NEAREST_AGENTS_MAX_BUFFER_SIZE (size_t)128
+
 namespace RVO 
 {
 	
-	Agent::Agent() : maxNeighbors(0), maxSpeed(0.0f), neighborDist(0.0f), radius(0.0f), timeHorizon(0.0f), isStatic(false) {}
+	Agent::Agent() : maxNeighbors(0), maxSpeed(0.0f), neighborDist(0.0f), radius(0.0f), timeHorizon(0.0f), immobilized(false) {}
 
 
-	void Agent::computeNeighbors(KdTree* spatialIndex)
+	void Agent::computeNewVelocity(float dt, KdTree* spatialIndex)
 	{
-		if (maxNeighbors > 0) 
-		{
-			float rangeSq = sqr(neighborDist);
-			spatialIndex->computeAgentNeighbors(this, rangeSq);
-		}
-	}
+		size_t maxResultLength = std::min(GET_NEAREST_AGENTS_MAX_BUFFER_SIZE, maxNeighbors);
+		std::pair<float, Agent*> agentNeighbours[GET_NEAREST_AGENTS_MAX_BUFFER_SIZE];
+		
+		float rangeSq = sqr(neighborDist);
+		size_t neighboursCount = spatialIndex->getNeighbours(this, rangeSq, maxResultLength, &(agentNeighbours[0]));
 
-
-	void Agent::computeNewVelocity(float dt)
-	{
 		std::vector<Line> orcaLines;
 
 		const float invTimeHorizon = 1.0f / timeHorizon;
 
 		/* Create agent ORCA lines. */
-		for (size_t i = 0; i < agentNeighbors_->size(); ++i) {
-			const Agent *const other = (*agentNeighbors_)[i].second;
+		for (size_t i = 0; i < neighboursCount; ++i) {
+			const Agent *const other = agentNeighbours[i].second;
 
 			const vec2 relativePosition = other->position - position;
 			const vec2 relativeVelocity = velocity_ - other->velocity_;
@@ -95,34 +93,6 @@ namespace RVO
 		if (lineFail < orcaLines.size()) 
 		{
 			linearProgram3(orcaLines, 0, lineFail, maxSpeed, newVelocity_);
-		}
-	}
-
-
-	void Agent::insertAgentNeighbor(const Agent *agent, float &rangeSq)
-	{
-		if (this != agent) {
-			const float dist = std::max(0.0f, length(position - agent->position) - radius - agent->radius);
-			const float distSq = dist * dist;
-
-			if (distSq < rangeSq) {
-				if (agentNeighbors_->size() < maxNeighbors) {
-					agentNeighbors_->push_back(std::make_pair(distSq, agent));
-				}
-
-				size_t i = agentNeighbors_->size() - 1;
-
-				while (i != 0 && distSq < (*agentNeighbors_)[i - 1].first) {
-					(*agentNeighbors_)[i] = (*agentNeighbors_)[i - 1];
-					--i;
-				}
-
-				(*agentNeighbors_)[i] = std::make_pair(distSq, agent);
-
-				if (agentNeighbors_->size() == maxNeighbors) {
-					rangeSq = agentNeighbors_->back().first;
-				}
-			}
 		}
 	}
 

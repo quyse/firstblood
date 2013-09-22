@@ -77,21 +77,17 @@ namespace RVO
 
 	void Simulator::doStep(float dt)
 	{
-		std::vector<std::pair<float, const Agent*>> agentNeighbors;
-
 		kdTree_->buildAgentTree(agents_, agents_.size());
 
-		for (int i = 0; i < static_cast<int>(agents_.size()); ++i) {
-			if (agents_[i]->isStatic)
-				continue;
-			agentNeighbors.clear();
-			agents_[i]->agentNeighbors_ = &agentNeighbors;
-			agents_[i]->computeNeighbors(kdTree_);
-			agents_[i]->computeNewVelocity(dt);
+		for (size_t i = 0; i < agents_.size(); ++i) 
+		{
+			if (!agents_[i]->immobilized)
+				agents_[i]->computeNewVelocity(dt, kdTree_);
 		}
 
-		for (int i = 0; i < static_cast<int>(agents_.size()); ++i) {
-			if (!agents_[i]->isStatic)
+		for (size_t i = 0; i < agents_.size(); ++i) 
+		{
+			if (!agents_[i]->immobilized)
 				agents_[i]->update(dt);
 		}
 	}

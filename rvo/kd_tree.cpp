@@ -70,43 +70,74 @@ namespace RVO
 	}
 
 
-	void KdTree::computeAgentNeighbors(Agent *agent, float &rangeSq) const
+	size_t KdTree::getNeighbours(Agent* agent, float& rangeSq, size_t maxResultLength, std::pair<float, Agent*>* result) const
 	{
-		queryAgentTreeRecursive(agent, rangeSq, 0);
+		size_t neighboursCount = 0;
+		queryAgentTreeRecursive(agent, rangeSq, 0, neighboursCount, maxResultLength, result);
+		return neighboursCount;
 	}
 
 
-	void KdTree::queryAgentTreeRecursive(Agent *agent, float &rangeSq, size_t node) const
+	void KdTree::queryAgentTreeRecursive(Agent *agent, float &rangeSq, size_t node, size_t& currentResultLength, size_t maxResultLength, std::pair<float, Agent*>* result) const
 	{
-		if (agentTree_[node].end - agentTree_[node].begin <= MAX_LEAF_SIZE) {
-			for (size_t i = agentTree_[node].begin; i < agentTree_[node].end; ++i) {
-				agent->insertAgentNeighbor(agents_[i], rangeSq);
+		if (agentTree_[node].end - agentTree_[node].begin <= MAX_LEAF_SIZE) 
+		{
+			for (size_t i = agentTree_[node].begin; i < agentTree_[node].end; ++i) 
+			{
+				Agent* agentToInsert = agents_[i];
+				if (agentToInsert != agent) 
+				{
+					const float dist = std::max(0.0f, length(agentToInsert->position - agent->position) - agentToInsert->radius - agent->radius);
+					const float distSq = dist * dist;
+
+					if (distSq < rangeSq) 
+					{
+						if (currentResultLength < maxResultLength) 
+						{
+							*(result + currentResultLength) = std::make_pair(distSq, agentToInsert);
+							++currentResultLength;
+						}
+
+						size_t j = currentResultLength - 1;
+
+						while (j != 0 && distSq < (*(result + j - 1)).first) 
+						{
+							*(result + j) = *(result + j - 1);
+							--j;
+						}
+
+						*(result + j) = std::make_pair(distSq, agentToInsert);
+
+						if (currentResultLength == maxResultLength)
+							rangeSq = (*(result + currentResultLength - 1)).first;
+					}
+				}
 			}
 		}
-		else {
+		else 
+		{
 			const float distSqLeft = sqr(std::max(0.0f, agentTree_[agentTree_[node].left].minX - agent->position.x)) + sqr(std::max(0.0f, agent->position.x - agentTree_[agentTree_[node].left].maxX)) + sqr(std::max(0.0f, agentTree_[agentTree_[node].left].minY - agent->position.y)) + sqr(std::max(0.0f, agent->position.y - agentTree_[agentTree_[node].left].maxY));
 
 			const float distSqRight = sqr(std::max(0.0f, agentTree_[agentTree_[node].right].minX - agent->position.x)) + sqr(std::max(0.0f, agent->position.x - agentTree_[agentTree_[node].right].maxX)) + sqr(std::max(0.0f, agentTree_[agentTree_[node].right].minY - agent->position.y)) + sqr(std::max(0.0f, agent->position.y - agentTree_[agentTree_[node].right].maxY));
 
 			if (distSqLeft < distSqRight) {
 				if (distSqLeft < rangeSq) {
-					queryAgentTreeRecursive(agent, rangeSq, agentTree_[node].left);
+					queryAgentTreeRecursive(agent, rangeSq, agentTree_[node].left, currentResultLength, maxResultLength, result);
 
 					if (distSqRight < rangeSq) {
-						queryAgentTreeRecursive(agent, rangeSq, agentTree_[node].right);
+						queryAgentTreeRecursive(agent, rangeSq, agentTree_[node].right, currentResultLength, maxResultLength, result);
 					}
 				}
 			}
 			else {
 				if (distSqRight < rangeSq) {
-					queryAgentTreeRecursive(agent, rangeSq, agentTree_[node].right);
+					queryAgentTreeRecursive(agent, rangeSq, agentTree_[node].right, currentResultLength, maxResultLength, result);
 
 					if (distSqLeft < rangeSq) {
-						queryAgentTreeRecursive(agent, rangeSq, agentTree_[node].left);
+						queryAgentTreeRecursive(agent, rangeSq, agentTree_[node].left, currentResultLength, maxResultLength, result);
 					}
 				}
 			}
-
 		}
 	}
 

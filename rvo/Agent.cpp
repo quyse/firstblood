@@ -1,5 +1,4 @@
 #include "rvo/agent.hpp"
-#include "rvo/kd_tree.hpp"
 #include "rvo/simulator.hpp"
 #include "geometry/distance.hpp"
 
@@ -11,13 +10,12 @@ namespace RVO
 	Agent::Agent() : maxNeighbors(0), maxSpeed(0.0f), neighborDist(0.0f), radius(0.0f), timeHorizon(0.0f), immobilized(false) {}
 
 
-	void Agent::computeNewVelocity(float dt, KdTree* spatialIndex)
+	void Agent::computeNewVelocity(float dt, Spatial::ISpatialIndex2D<Agent>* spatialIndex)
 	{
 		size_t maxResultLength = std::min(GET_NEAREST_AGENTS_MAX_BUFFER_SIZE, maxNeighbors);
-		std::pair<float, Agent*> agentNeighbours[GET_NEAREST_AGENTS_MAX_BUFFER_SIZE];
+		Agent* agentNeighbours[GET_NEAREST_AGENTS_MAX_BUFFER_SIZE];
 		
-		float rangeSq = sqr(neighborDist);
-		size_t neighboursCount = spatialIndex->getNeighbours(this, rangeSq, maxResultLength, &(agentNeighbours[0]));
+		size_t neighboursCount = spatialIndex->getNeighbours(position, neighborDist, 1, &(agentNeighbours[0]), maxResultLength, this);
 
 		std::vector<Line> orcaLines;
 
@@ -25,7 +23,7 @@ namespace RVO
 
 		/* Create agent ORCA lines. */
 		for (size_t i = 0; i < neighboursCount; ++i) {
-			const Agent *const other = agentNeighbours[i].second;
+			const Agent *const other = agentNeighbours[i];
 
 			const vec2 relativePosition = other->position - position;
 			const vec2 relativeVelocity = velocity_ - other->velocity_;

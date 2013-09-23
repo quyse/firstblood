@@ -2,21 +2,19 @@
 #define __FBE_RVO_SIMULATOR_H__
 
 #include "rvo/math.hpp"
+#include "spatial/interfaces.hpp"
 
 using namespace Inanity::Math;
 
-namespace RVO {
+namespace RVO 
+{
 
 	class Agent;
-	class KdTree;
-
+	class SpatialIndex;
 
 	class Simulator 
 	{
 		friend class Agent;
-		friend class KdTree;
-		friend class Obstacle;
-
 
 	public:
 		Simulator();
@@ -30,11 +28,11 @@ namespace RVO {
 
 		void doStep(float dt);
 
-
 	private:
-		std::vector<Agent*> agents_;
+		Agent* _agents;
+		size_t _agentsCount;
 		Agent* defaultAgent_;
-		KdTree* kdTree_;
+		Spatial::ISpatialIndex2D<Agent>* _spatialIndex;
 	};
 }
 

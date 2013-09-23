@@ -12,14 +12,12 @@ public:
 		_memory = static_cast<unsigned char*>(malloc(totalSize));
 	}
 
-
 	~ArenaAllocator()
 	{
 		free(static_cast<void*>(_memory));
 	}
 
-
-	inline void* alloc(size_t size)
+	inline void* allocMemory(size_t size)
 	{
 		if (_allocatedSize + size <= _totalSize)
 		{
@@ -33,6 +31,19 @@ public:
 		}
 	}
 
+	template<class T>
+	inline T* alloc()
+	{
+		void* memory = allocMemory(sizeof(T));
+		if (memory != nullptr)
+		{
+			return new (memory) T;
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
 
 	inline void purge()
 	{
@@ -42,7 +53,6 @@ public:
 private:
 	size_t _totalSize;
 	size_t _allocatedSize;
-
 	unsigned char* _memory;
 };
 

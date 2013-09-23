@@ -1,7 +1,7 @@
 #ifndef __FBE_GEOMETRY_DISTANCE__
 #define __FBE_GEOMETRY_DISTANCE__
 
-#include "../../inanity/math/basic.hpp"
+#include "inanity/math/basic.hpp"
 #include <math.h>
 #include "constants.hpp"
 
@@ -29,6 +29,22 @@ inline T distanceSquaredPointSegment(const xvec<T, 2>& a, const xvec<T, 2>& b, c
 	{
 		return length2(c - (a + segmentVector * r));
 	}
+}
+
+
+template<typename T, int N>
+inline T distanceSquaredPointAABB(const xvec<T, N>& point, const xvec<T, N>& min, const xvec<T, N>& max)
+{
+	T sqrDist = (T)0.0;
+	for (size_t i = 0; i < N; ++i)
+	{
+		T v = point(i);
+		if (v < min(i)) 
+			sqrDist += sqr(min(i) - v);
+		if (v > max(i)) 
+			sqrDist += sqr(v - max(i));
+	}
+	return sqrDist;
 }
 
 #endif

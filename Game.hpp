@@ -7,6 +7,7 @@
 
 #include "Engine.hpp"
 #include "spatial/quadtree.hpp"
+#include "spatial/kd_tree.hpp"
 #include "rvo/simulator.hpp"
 #include "rvo/agent.hpp"
 
@@ -47,13 +48,15 @@ public:
 
 protected:
 	void Step(float frameTime);
-	void drawQuadtreeNode(Quadtree<QuadtreeDebugObject, Game>::Node*);
+	//void drawQuadtreeNode(Quadtree::Node* node);
+	//void drawKdTreeNode(KdTree::Node* node);
 
 protected:
 	RVO::Simulator* rvoSimulation;
 	std::vector<RVO::Agent*> agents;
 	std::vector<vec2> goals;
-	Quadtree<QuadtreeDebugObject, Game>* quadtree;
+	Spatial::Quadtree<QuadtreeDebugObject>* quadtree;
+	Spatial::KdTree<QuadtreeDebugObject>* kdTree;
 };
 
 #endif

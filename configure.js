@@ -4,6 +4,8 @@ exports.configureCompiler = function(objectFile, compiler) {
 	compiler.configuration = a[1];
 	compiler.setSourceFile(a[2].replace(/\./g, '/') + '.cpp');
 	compiler.addIncludeDir('../inanity/deps/bullet/src');
+	compiler.addIncludeDir('../');
+	compiler.addIncludeDir('./');
 };
 
 var staticLibraries = [
@@ -44,7 +46,7 @@ exports.configureLinker = function(executableFile, linker) {
 	var a = /^(([^\/]+)\/)[^\/]+$/.exec(executableFile);
 	linker.configuration = a[2];
 
-	var objects = ['main', 'Engine', 'Game', 'Geometry', 'GeometryFormats', 'Painter', 'rvo.Agent', 'rvo.RVOSimulator', 'rvo.Obstacle', 'rvo.KdTree'];
+	var objects = ['main', 'Engine', 'Game', 'Geometry', 'GeometryFormats', 'Painter', 'rvo.simulator', 'rvo.agent', 'rvo.math'];
 	for ( var i = 0; i < objects.length; ++i)
 		linker.addObjectFile(a[1] + objects[i]);
 

@@ -11,7 +11,8 @@ static bool rvoExampleInitialized = false;
 
 Game::Game()
 {
-	quadtree = new Quadtree<QuadtreeDebugObject, Game>(32, 4, 1024 * 1024);
+	quadtree = new Spatial::Quadtree<QuadtreeDebugObject>(4, 32, 1024 * 1024);
+	kdTree = new Spatial::KdTree<QuadtreeDebugObject>(4, 1024 * 1024);
 	rvoSimulation = new RVO::Simulator();
 }
 
@@ -23,7 +24,7 @@ Game::~Game()
 }
 
 
-void Game::drawQuadtreeNode(Quadtree<QuadtreeDebugObject, Game>::Node* node)
+/*void Game::drawQuadtreeNode(Quadtree::Node* node)
 {
 	painter->DebugDrawRectangle(node->min.x, node->min.y, node->max.x, node->max.y, 0, vec3(0, 1, 0));
 	for (size_t i = 0; i < 4; ++i)
@@ -32,7 +33,7 @@ void Game::drawQuadtreeNode(Quadtree<QuadtreeDebugObject, Game>::Node* node)
 			drawQuadtreeNode(node->children[i]);
 	}
 
-	Quadtree<QuadtreeDebugObject, Game>::EntityList* s = node->inhabitants;
+	Spatial::EntityList<QuadtreeDebugObject>* s = node->inhabitants;
 	while (s != nullptr)
 	{
 		vec2 center = s->getPosition();
@@ -41,6 +42,25 @@ void Game::drawQuadtreeNode(Quadtree<QuadtreeDebugObject, Game>::Node* node)
 		s = s->next;
 	}
 }
+
+
+void Game::drawKdTreeNode(KdTree::Node* node)
+{
+	painter->DebugDrawRectangle(node->min.x, node->min.y, node->max.x, node->max.y, 0, vec3(0, 1, 0));
+	if (node->children[0] != nullptr)
+		drawKdTreeNode(node->children[0]);
+	if (node->children[1] != nullptr)
+		drawKdTreeNode(node->children[1]);
+
+	Spatial::EntityList<QuadtreeDebugObject>* s = node->inhabitants;
+	while (s != nullptr)
+	{
+		vec2 center = s->getPosition();
+		float radius = s->getRadius();
+		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 0.5, vec3(1.0f, 0.8f, 0.8f));
+		s = s->next;
+	}
+}*/
 
 
 void Game::Step(float frameTime)
@@ -53,19 +73,31 @@ void Game::Step(float frameTime)
 	answer = intersectSegmentSphere(vec3(0, 0, 0), vec3(5, 5, 5), vec3(2, 2, 2), 5.0f, i0, i1, tmin, tmax);
 	if (!rvoExampleInitialized)
 	{
-		int numAgents = 8;
+		int numAgents = 16;
 		bool addObstacle = true;
-		rvoSimulation->setAgentDefaults(10.0f, 16, 32.0f, 1.5f, 2.0f);
-		for (size_t i = 0; i < numAgents; ++i) 
+		rvoSimulation->setAgentDefaults(15.0f, 8, 15.0f, 1.5f, 2.0f);
+		for (int i = 0; i < numAgents; ++i) 
 		{
 			RVO::Agent* agent = rvoSimulation->addAgent(vec2(std::cos(i * 2.0f * pi / numAgents + 0.01f), std::sin(i * 2.0f * pi / numAgents + 0.01f)) * 100.0f);
-			agent->maxSpeed = 0.5f;
+			agent->maxSpeed = 2.0f;
+			goals.push_back(-agent->position);
+			agents.push_back(agent);
+		}
+		for (int i = 0; i < numAgents; ++i) 
+		{
+			RVO::Agent* agent = rvoSimulation->addAgent(vec2(-150.0f, 6.0f * (i - 0.5f * numAgents)));
+			agent->maxSpeed = 2.0f + 0.001f * i;
+			goals.push_back(-agent->position);
+			agents.push_back(agent);
+
+			agent = rvoSimulation->addAgent(vec2(150.0f, 6.0f * (i - 0.5f * numAgents)));
+			agent->maxSpeed = 2.0f + 0.001f * i;
 			goals.push_back(-agent->position);
 			agents.push_back(agent);
 		}
 		if (addObstacle)
 		{
-			RVO::Agent* agent = rvoSimulation->addAgent(vec2(0, 0), 20, 32, 10.0f, 10.0f, 8.0f, 0.1f);
+			RVO::Agent* agent = rvoSimulation->addAgent(vec2(0, 0), 20, 32, 10.0f, 12.0f, 0.0f);
 			agent->immobilized = true;
 			goals.push_back(-agent->position);
 			agents.push_back(agent);
@@ -85,9 +117,9 @@ void Game::Step(float frameTime)
 		agent->prefVelocity = goalVector;
 	}
 
-	rvoSimulation->doStep(0.2f);
+	rvoSimulation->doStep(20 * frameTime);
 
-	/*float visualScale = 0.3f;
+	float visualScale = 0.3f;
 	for (size_t i = 0; i < l; ++i) 
 	{
 		RVO::Agent* agent = agents[i];
@@ -98,8 +130,7 @@ void Game::Step(float frameTime)
 			visualScale * (agentPosition.x + agentRadius), visualScale * (agentPosition.y + agentRadius),
 			0, vec3(1, 1, 1)
 		);
-	}*/
-	quadtree->purge();
+	}
 
 	std::vector<QuadtreeDebugObject> spheres;
 	spheres.push_back(QuadtreeDebugObject(vec2(10, 10), 3));
@@ -114,17 +145,23 @@ void Game::Step(float frameTime)
 	std::random_device rd1;
     std::minstd_rand gen1(23);
     std::uniform_real_distribution<float> dis(-16.0f, 16.0f);
-	for (size_t i = 0; i < 200; ++i)
+	for (size_t i = 0; i < 2000; ++i)
 	{
 		float x = dis(gen0);
 		float y = dis(gen1);
-		//spheres.push_back(new QuadtreeDebugObject(vec2(x, y), 0.25));
+		//spheres.push_back(QuadtreeDebugObject(vec2(x, y), 0.25));
 	}
 
+	quadtree->purge();
 	quadtree->build(&(spheres[0]), spheres.size());
 	quadtree->optimize();
 
-	drawQuadtreeNode(quadtree->_root);
+	kdTree->purge();
+	kdTree->build(&(spheres[0]), spheres.size());
+
+	//drawKdTreeNode(kdTree->_root);
+
+	//drawQuadtreeNode(quadtree->_root);
 
 	// RAYCAST STRESS TEST
 	/*std::vector<std::pair<vec2, vec2>> raycasts;
@@ -156,12 +193,12 @@ void Game::Step(float frameTime)
 			quadtree->raycast(origin, end, 1, t);
 		}
 	}*/
-
+	 
 	// RAYCAST TEST
 	/*vec2 origin(-20, 18);
 	vec2 end(20, 18);
 	float t;
-	QuadtreeDebugObject* result = quadtree->raycast(origin, end, 1, t);
+	QuadtreeDebugObject* result = kdTree->raycast(origin, end, 1, t);
 	if (result != nullptr)
 	{
 		vec2 center = result->center;
@@ -173,12 +210,11 @@ void Game::Step(float frameTime)
 	painter->DebugDrawLine(vec3(origin.x, origin.y, 0), vec3(end.x, end.y, 0), vec3(1, 0, 0));*/
 
 	// NEAREST NEIGHBOURS TEST
-	/*QuadtreeDebugObject* dudes[256];
+	/*QuadtreeDebugObject* dudes[16];
 	vec2 testPoint(6, 6);
-	float testDist = 10.0f;
-	size_t count = quadtree->getNeighbours(testPoint, testDist, 1, &(dudes[0]), 256); 
+	float testDist = 4.0f;
+	size_t count = kdTree->getNeighbours(testPoint, testDist, 1, &(dudes[0]), 16); 
 	painter->DebugDrawRectangle(testPoint.x - testDist, testPoint.y - testDist, testPoint.x + testDist, testPoint.y + testDist, 1, vec3(0, 0, 1), 0.2f);
-	std::cout << "Count is " << count << std::endl;
 
 	for (size_t i = 0; i < count; ++i)
 	{
@@ -186,6 +222,7 @@ void Game::Step(float frameTime)
 		float radius = dudes[i]->radius;
 		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 2, vec3(1, 1, 0), 0.2f);		
 	}*/
+	Sleep(10);
 
 #else
 	painter->DebugDrawRectangle(0, 0, 20, 20, 0, vec3(1, 1, 1));

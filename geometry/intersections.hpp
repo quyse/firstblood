@@ -1,10 +1,11 @@
 #ifndef __FBE_GEOMETRY_INTERSECTIONS__
 #define __FBE_GEOMETRY_INTERSECTIONS__
 
-#include "../../inanity/math/basic.hpp"
+#include "inanity/math/basic.hpp"
 #include <math.h>
 #include <algorithm>
-#include "constants.hpp"
+#include "geometry/constants.hpp"
+#include "geometry/distance.hpp"
 
 inline bool testSegmentSegment1D(float a0, float a1, float b0, float b1)
 {
@@ -34,6 +35,13 @@ inline bool testAABBAABB(const xvec<T, N>& bMin0, const xvec<T, N>& bMax0, const
 			return false;
 	}
 	return true;
+}
+
+
+template<typename T, int N>
+inline bool testSphereAABB(const xvec<T, N>& center, T radius, const xvec<T, N>& min, const xvec<T, N>& max)
+{
+	return distanceSquaredPointAABB(center, min, max) <= sqr(radius);
 }
 
 

@@ -1,21 +1,25 @@
 #include "rvo/simulator.hpp"
 #include "rvo/agent.hpp"
-#include "rvo/kd_tree.hpp"
+#include "spatial/kd_tree.hpp"
+#include "spatial/tree_base.hpp"
 
 namespace RVO 
 {
 
-	Simulator::Simulator() : defaultAgent_(NULL), kdTree_(NULL)
+	Simulator::Simulator() : defaultAgent_(NULL), _agentsCount(0)
 	{
-		kdTree_ = new KdTree();
+		Spatial::KdTree<Agent>* kdTree = new Spatial::KdTree<Agent>(10, 1024 * 1024);
+		_spatialIndex = kdTree;
+		_agents = new Agent[512];
 	}
 
-
-	Simulator::Simulator(float timeStep, float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2& velocity) : defaultAgent_(NULL), kdTree_(NULL)
+	Simulator::Simulator(float timeStep, float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2& velocity) : defaultAgent_(NULL), _agentsCount(0)
 	{
-		kdTree_ = new KdTree();
-		defaultAgent_ = new Agent();
+		Spatial::KdTree<Agent>* kdTree = new Spatial::KdTree<Agent>(10, 1024 * 1024);
+		_spatialIndex = kdTree;
+		_agents = new Agent[512];
 
+		defaultAgent_ = new Agent();
 		defaultAgent_->maxNeighbors = maxNeighbors;
 		defaultAgent_->maxSpeed = maxSpeed;
 		defaultAgent_->neighborDist = neighborDist;
@@ -24,25 +28,20 @@ namespace RVO
 		defaultAgent_->velocity_ = velocity;
 	}
 
-
 	Simulator::~Simulator()
 	{
-		if (defaultAgent_ != NULL) {
+		if (defaultAgent_ != NULL)
 			delete defaultAgent_;
-		}
 
-		for (size_t i = 0; i < agents_.size(); ++i) {
-			delete agents_[i];
-		}
+		delete[] _agents;
 
-		delete kdTree_;
+		delete _spatialIndex;
 	}
-
 
 	Agent* Simulator::addAgent(const vec2 &position)
 	{
-		Agent *agent = new Agent();
-
+		Agent *agent =_agents + _agentsCount;
+		++_agentsCount;
 		agent->position = position;
 		agent->maxNeighbors = defaultAgent_->maxNeighbors;
 		agent->maxSpeed = defaultAgent_->maxSpeed;
@@ -50,17 +49,13 @@ namespace RVO
 		agent->radius = defaultAgent_->radius;
 		agent->timeHorizon = defaultAgent_->timeHorizon;
 		agent->velocity_ = defaultAgent_->velocity_;
-
-		agents_.push_back(agent);
-
 		return agent;
 	}
 
-
 	Agent* Simulator::addAgent(const vec2 &position, float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2 &velocity)
 	{
-		Agent *agent = new Agent();
-
+		Agent* agent =_agents + _agentsCount;
+		++_agentsCount;
 		agent->position = position;
 		agent->maxNeighbors = maxNeighbors;
 		agent->maxSpeed = maxSpeed;
@@ -68,42 +63,38 @@ namespace RVO
 		agent->radius = radius;
 		agent->timeHorizon = timeHorizon;
 		agent->velocity_ = velocity;
-
-		agents_.push_back(agent);
-
 		return agent;
 	}
 
-
 	void Simulator::doStep(float dt)
 	{
-		kdTree_->buildAgentTree(agents_, agents_.size());
+		_spatialIndex->purge();
+		_spatialIndex->build(_agents, _agentsCount);
 
-		for (size_t i = 0; i < agents_.size(); ++i) 
+		for (size_t i = 0; i < _agentsCount; ++i) 
 		{
-			if (!agents_[i]->immobilized)
-				agents_[i]->computeNewVelocity(dt, kdTree_);
+			Agent* agent = _agents + i;
+			if (!agent->immobilized)
+				agent->computeNewVelocity(dt, _spatialIndex);
 		}
 
-		for (size_t i = 0; i < agents_.size(); ++i) 
+		for (size_t i = 0; i < _agentsCount; ++i) 
 		{
-			if (!agents_[i]->immobilized)
-				agents_[i]->update(dt);
+			Agent* agent = _agents + i;
+			if (!agent->immobilized)
+				agent->update(dt);
 		}
 	}
 
 	size_t Simulator::getNumAgents() const
 	{
-		return agents_.size();
+		return _agentsCount;
 	}
-
 
 	void Simulator::setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2 &velocity)
 	{
-		if (defaultAgent_ == NULL) {
+		if (defaultAgent_ == NULL)
 			defaultAgent_ = new Agent();
-		}
-
 		defaultAgent_->maxNeighbors = maxNeighbors;
 		defaultAgent_->maxSpeed = maxSpeed;
 		defaultAgent_->neighborDist = neighborDist;

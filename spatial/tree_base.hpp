@@ -19,6 +19,7 @@ namespace Spatial
 		T* entity;
 		EntityList<T>* next;
 
+		// todo: these ones are ugly and probably useless
 		inline uint32_t getMask() { return entity->getMask(); }
 		inline float getRadius() { return entity->getRadius(); }
 		inline vec2 getPosition() { return entity->getPosition(); }
@@ -83,6 +84,8 @@ namespace Spatial
 		}
 
 	protected:
+		// todo: should be iteratively
+		// todo: cull the segment by the current minimum distance
 		T* raycastRecursively(const vec2& origin, const vec2& end, uint32_t mask, float& t, Node<T>* node, T* skipEntity)
 		{
 			vec2 clippedOrigin, clippedEnd;
@@ -131,6 +134,8 @@ namespace Spatial
 			return chosenEntity;
 		}
 
+		// todo: should be iteratively
+		// todo: maybe heap sorting ain't worth it, try to use simple insertion sort instead
 		void getNeighboursRecursively(const vec2& point, float& distance, uint32_t mask, size_t& currentResultLength, size_t maxResultLength, Node<T>* currentNode, PrioritizedEntity<T>* heap, T* skipEntity) const
 		{
 			if (!testSphereAABB(point, distance, currentNode->min, currentNode->max))

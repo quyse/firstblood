@@ -10,7 +10,6 @@ namespace RVO
 {
 
 	class Agent;
-	class SpatialIndex;
 
 	class Simulator 
 	{
@@ -18,7 +17,6 @@ namespace RVO
 
 	public:
 		Simulator();
-		Simulator(float timeStep, float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2& velocity = vec2());
 		~Simulator();
 
 		Agent* addAgent(const vec2& position);

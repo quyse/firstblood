@@ -109,6 +109,8 @@ namespace RVO
 		return lines.size();
 	}
 
+	// todo: remove obstacles-related parts
+	// todo: get rid of std::vector
 	void linearProgram3(const std::vector<Line> &lines, size_t numObstLines, size_t beginLine, float radius, vec2 &result)
 	{
 		float distance = 0.0f;

@@ -53,6 +53,7 @@ namespace Spatial
 		virtual void optimize() {}
 
 	private:
+		// todo: first pass over all objects gives us retarded nlogn bounding boxes computation
 		void buildRecursively(KdTreeNode<T>* node, EntityList<T>* objects, size_t objectsCount)
 		{
 			node->min.x = FLT_MAX;

@@ -6,26 +6,13 @@
 namespace RVO 
 {
 
+	// todo: kill hardcode
+	// todo: when abstract pod storage with indirection is ready, use it as agents' container
 	Simulator::Simulator() : defaultAgent_(NULL), _agentsCount(0)
 	{
 		Spatial::KdTree<Agent>* kdTree = new Spatial::KdTree<Agent>(10, 1024 * 1024);
 		_spatialIndex = kdTree;
 		_agents = new Agent[512];
-	}
-
-	Simulator::Simulator(float timeStep, float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2& velocity) : defaultAgent_(NULL), _agentsCount(0)
-	{
-		Spatial::KdTree<Agent>* kdTree = new Spatial::KdTree<Agent>(10, 1024 * 1024);
-		_spatialIndex = kdTree;
-		_agents = new Agent[512];
-
-		defaultAgent_ = new Agent();
-		defaultAgent_->maxNeighbors = maxNeighbors;
-		defaultAgent_->maxSpeed = maxSpeed;
-		defaultAgent_->neighborDist = neighborDist;
-		defaultAgent_->radius = radius;
-		defaultAgent_->timeHorizon = timeHorizon;
-		defaultAgent_->velocity_ = velocity;
 	}
 
 	Simulator::~Simulator()

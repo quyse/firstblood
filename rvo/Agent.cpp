@@ -9,7 +9,7 @@ namespace RVO
 	
 	Agent::Agent() : maxNeighbors(0), maxSpeed(0.0f), neighborDist(0.0f), radius(0.0f), timeHorizon(0.0f), immobilized(false) {}
 
-
+	// todo: get rid of std::vector
 	void Agent::computeNewVelocity(float dt, Spatial::ISpatialIndex2D<Agent>* spatialIndex)
 	{
 		size_t maxResultLength = std::min(GET_NEAREST_AGENTS_MAX_BUFFER_SIZE, maxNeighbors);

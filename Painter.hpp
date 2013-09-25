@@ -39,6 +39,10 @@ private:
 	/// Вспомогательный буфер для размытия тени.
 	ptr<RenderBuffer> rbShadowBlur;
 
+	//*** Фреймбуферы.
+	ptr<FrameBuffer> fbMain, fbPreMain, fbShadow;
+	ptr<FrameBuffer> fbShadowBlur1, fbShadowBlur2;
+
 	//*** Атрибуты.
 	/// Атрибуты отладочной геометрии.
 	struct DebugAttributes

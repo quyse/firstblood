@@ -206,8 +206,6 @@ void Engine::Tick()
 
 	textDrawer->Flush();
 
-	context->GetTargetState().renderBuffers[0] = 0;
-
 	presenter->Present();
 }
 

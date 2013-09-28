@@ -18,6 +18,7 @@ namespace Spatial
 		virtual ~ISpatialIndex2D() {};
 	
 		virtual void build(T* objects, size_t objectsCount) = 0;
+		virtual void build(T** objects, size_t objectsCount) = 0;
 		virtual void purge() = 0;
 		virtual void optimize() = 0;
 

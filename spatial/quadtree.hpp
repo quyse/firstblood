@@ -66,7 +66,18 @@ namespace Spatial
 				T* object = objects + i;
 				float radius = object->getRadius();
 				vec2 position = object->getPosition();
-				addObjectRecursively(objects + i, radius, position, _root, 0);
+				addObjectRecursively(object, radius, position, _root, 0);
+			}
+		}
+
+		virtual void build(T** objects, size_t objectsCount)
+		{
+			for (size_t i = 0; i < objectsCount; ++i)
+			{
+				T* object = *(objects + i);
+				float radius = object->getRadius();
+				vec2 position = object->getPosition();
+				addObjectRecursively(object, radius, position, _root, 0);
 			}
 		}
 

@@ -53,8 +53,7 @@ protected:
 
 protected:
 	RVO::Simulator* rvoSimulation;
-	std::vector<RVO::Agent*> agents;
-	std::vector<vec2> goals;
+	std::vector<std::pair<RVO::Agent*, vec2>> agents;
 	Spatial::Quadtree<QuadtreeDebugObject>* quadtree;
 	Spatial::KdTree<QuadtreeDebugObject>* kdTree;
 };

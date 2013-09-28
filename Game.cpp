@@ -9,11 +9,16 @@ static const float pi = acos(-1.0f);
 
 static bool rvoExampleInitialized = false;
 
+float badRandom(float a, float b)
+{
+	return a + (b - a) * (float)rand() / (float)RAND_MAX;
+}
+
 Game::Game()
 {
 	quadtree = new Spatial::Quadtree<QuadtreeDebugObject>(4, 32, 1024 * 1024);
 	kdTree = new Spatial::KdTree<QuadtreeDebugObject>(4, 1024 * 1024);
-	rvoSimulation = new RVO::Simulator();
+	rvoSimulation = new RVO::Simulator(256);
 }
 
 
@@ -76,53 +81,72 @@ void Game::Step(float frameTime)
 		int numAgents = 16;
 		bool addObstacle = true;
 		rvoSimulation->setAgentDefaults(15.0f, 8, 15.0f, 1.5f, 2.0f);
-		for (int i = 0; i < numAgents; ++i) 
+		/*for (int i = 0; i < numAgents; ++i) 
 		{
 			RVO::Agent* agent = rvoSimulation->addAgent(vec2(std::cos(i * 2.0f * pi / numAgents + 0.01f), std::sin(i * 2.0f * pi / numAgents + 0.01f)) * 100.0f);
 			agent->maxSpeed = 2.0f;
-			goals.push_back(-agent->position);
-			agents.push_back(agent);
+			agents.push_back(std::make_pair(agent, -agent->position));
 		}
 		for (int i = 0; i < numAgents; ++i) 
 		{
 			RVO::Agent* agent = rvoSimulation->addAgent(vec2(-150.0f, 6.0f * (i - 0.5f * numAgents)));
 			agent->maxSpeed = 2.0f + 0.001f * i;
-			goals.push_back(-agent->position);
-			agents.push_back(agent);
+			agents.push_back(std::make_pair(agent, -agent->position));
 
 			agent = rvoSimulation->addAgent(vec2(150.0f, 6.0f * (i - 0.5f * numAgents)));
 			agent->maxSpeed = 2.0f + 0.001f * i;
-			goals.push_back(-agent->position);
-			agents.push_back(agent);
+			agents.push_back(std::make_pair(agent, -agent->position));
 		}
 		if (addObstacle)
 		{
 			RVO::Agent* agent = rvoSimulation->addAgent(vec2(0, 0), 20, 32, 10.0f, 12.0f, 0.0f);
 			agent->immobilized = true;
-			goals.push_back(-agent->position);
-			agents.push_back(agent);
-		}
+			agents.push_back(std::make_pair(agent, -agent->position));
+		}*/
 		rvoExampleInitialized = true;
 	}
 
 	size_t l = rvoSimulation->getNumAgents();
 	for (size_t i = 0; i < l; ++i) 
 	{
-		RVO::Agent* agent = agents[i];
-		vec2 goalVector = goals[i] - agent->position;
+		std::pair<RVO::Agent*, vec2> agent = agents[i];
+		vec2 goalVector = agent.second - agent.first->position;
 		if (length2(goalVector) > 1.0f) 
 		{
 			goalVector = normalize(goalVector);
 		}
-		agent->prefVelocity = goalVector;
+		agent.first->prefVelocity = goalVector;
+	}
+
+	if (rvoSimulation->getMaxAgents() > rvoSimulation->getNumAgents())
+	{
+		RVO::Agent* agent = rvoSimulation->addAgent(vec2(badRandom(0.0f, 1.0f) < 0.5f ? -25.0f : 25.0f, badRandom(-100.0f, 100.0f)));
+		agent->maxSpeed = 2.0f;
+		agents.push_back(std::make_pair(agent, -agent->position));
 	}
 
 	rvoSimulation->doStep(20 * frameTime);
 
+	l = rvoSimulation->getNumAgents();
+	for (size_t i = 0; i < l; i++)
+	{
+		RVO::Agent* agent = agents[i].first;
+		vec2 hisGoal = agents[i].second;
+		float distance = length(agent->position - hisGoal);
+		if (!agent->immobilized && distance < 1.0f)
+		{
+			rvoSimulation->removeAgent(agent);
+			agents[i] = agents[l - 1];
+			agents.pop_back();
+			--i;
+			--l;
+		}
+	}
+
 	float visualScale = 0.3f;
 	for (size_t i = 0; i < l; ++i) 
 	{
-		RVO::Agent* agent = agents[i];
+		RVO::Agent* agent = agents[i].first;
 		vec2 agentPosition = agent->position;
 		float agentRadius = agent->radius;
 		painter->DebugDrawRectangle(

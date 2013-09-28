@@ -2,33 +2,38 @@
 #include "rvo/agent.hpp"
 #include "spatial/kd_tree.hpp"
 #include "spatial/tree_base.hpp"
+#include "memory/pool_allocator.hpp"
 
 namespace RVO 
 {
 
 	// todo: kill hardcode
-	// todo: when abstract pod storage with indirection is ready, use it as agents' container
-	Simulator::Simulator() : defaultAgent_(NULL), _agentsCount(0)
+	Simulator::Simulator(size_t maxAgentsCount) : defaultAgent_(NULL), _agentsCount(0), _maxAgentsCount(maxAgentsCount)
 	{
+		_allocator = new PoolAllocator(sizeof(Agent), _maxAgentsCount + 1);
+		_agents.reserve(_maxAgentsCount);
+		for (size_t i = 0; i < _maxAgentsCount; ++i)
+			_agents.push_back(nullptr);
+
+		defaultAgent_ = _allocator->alloc<Agent>();
+
 		Spatial::KdTree<Agent>* kdTree = new Spatial::KdTree<Agent>(10, 1024 * 1024);
 		_spatialIndex = kdTree;
-		_agents = new Agent[512];
 	}
 
 	Simulator::~Simulator()
 	{
-		if (defaultAgent_ != NULL)
-			delete defaultAgent_;
-
-		delete[] _agents;
-
 		delete _spatialIndex;
+		delete _allocator;
+		_agents.clear();
 	}
 
 	Agent* Simulator::addAgent(const vec2 &position)
 	{
-		Agent *agent =_agents + _agentsCount;
-		++_agentsCount;
+		assert(_agentsCount < _maxAgentsCount);
+		Agent* agent = _allocator->alloc<Agent>();
+		agent->_index = _agentsCount ;
+		_agents[_agentsCount++] = agent;
 		agent->position = position;
 		agent->maxNeighbors = defaultAgent_->maxNeighbors;
 		agent->maxSpeed = defaultAgent_->maxSpeed;
@@ -41,8 +46,10 @@ namespace RVO
 
 	Agent* Simulator::addAgent(const vec2 &position, float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2 &velocity)
 	{
-		Agent* agent =_agents + _agentsCount;
-		++_agentsCount;
+		assert(_agentsCount < _maxAgentsCount);
+		Agent* agent = _allocator->alloc<Agent>();
+		agent->_index = _agentsCount;
+		_agents[_agentsCount++] = agent;
 		agent->position = position;
 		agent->maxNeighbors = maxNeighbors;
 		agent->maxSpeed = maxSpeed;
@@ -53,21 +60,32 @@ namespace RVO
 		return agent;
 	}
 
+	void Simulator::removeAgent(Agent* agent)
+	{
+		assert(agent->_index < _agentsCount);
+		assert(agent == _agents[agent->_index]);
+		size_t index = agent->_index;
+		_allocator->dealloc(agent);
+		_agents[index] = _agents[_agentsCount - 1];
+		_agents[index]->_index = index;
+		--_agentsCount;
+	}
+
 	void Simulator::doStep(float dt)
 	{
 		_spatialIndex->purge();
-		_spatialIndex->build(_agents, _agentsCount);
+		_spatialIndex->build(&_agents[0], _agentsCount);
 
 		for (size_t i = 0; i < _agentsCount; ++i) 
 		{
-			Agent* agent = _agents + i;
+			Agent* agent = _agents[i];
 			if (!agent->immobilized)
 				agent->computeNewVelocity(dt, _spatialIndex);
 		}
 
 		for (size_t i = 0; i < _agentsCount; ++i) 
 		{
-			Agent* agent = _agents + i;
+			Agent* agent = _agents[i];
 			if (!agent->immobilized)
 				agent->update(dt);
 		}
@@ -78,10 +96,13 @@ namespace RVO
 		return _agentsCount;
 	}
 
+	size_t Simulator::getMaxAgents() const
+	{
+		return _maxAgentsCount;
+	}
+
 	void Simulator::setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2 &velocity)
 	{
-		if (defaultAgent_ == NULL)
-			defaultAgent_ = new Agent();
 		defaultAgent_->maxNeighbors = maxNeighbors;
 		defaultAgent_->maxSpeed = maxSpeed;
 		defaultAgent_->neighborDist = neighborDist;

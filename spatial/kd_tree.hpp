@@ -50,6 +50,23 @@ namespace Spatial
 			}
 		}
 
+		virtual void build(T** objects, size_t objectsCount)
+		{
+			if (objectsCount > 0)
+			{
+				EntityList<T>* wrappedObjects = _arena->alloc<EntityList<T>>();
+				wrappedObjects->entity = *objects;
+				for (size_t i = 1; i < objectsCount; ++i)
+				{
+					EntityList<T>* wrap = _arena->alloc<EntityList<T>>();
+					wrap->entity = *(objects + i);
+					wrap->next = wrappedObjects;
+					wrappedObjects = wrap;
+				}
+				buildRecursively(_root, wrappedObjects, objectsCount);
+			}
+		}
+
 		virtual void optimize() {}
 
 	private:

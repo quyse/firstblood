@@ -16,6 +16,7 @@ namespace RVO
 		friend class Simulator;
 
 	public:
+		Agent();
 		// spatial index interface
 		inline vec2 getPosition() { return position; }
 		inline float getRadius() { return radius; }
@@ -23,7 +24,6 @@ namespace RVO
 		inline bool raycast(const vec2& origin, const vec2& end, float& dist) { return true; }
 
 	private:
-		explicit Agent();
 		void computeNewVelocity(float dt, Spatial::ISpatialIndex2D<Agent>* spatialIndex);
 		void update(float dt);
 
@@ -40,6 +40,7 @@ namespace RVO
 	private:
 		vec2 velocity_;
 		vec2 newVelocity_;
+		size_t _index;
 	};
 
 }

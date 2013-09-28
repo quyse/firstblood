@@ -82,6 +82,9 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 
 	rbShadow = device->CreateRenderBuffer(shadowMapSize, shadowMapSize, PixelFormats::floatR16);
 	dsbShadow = device->CreateDepthStencilBuffer(shadowMapSize, shadowMapSize, false);
+	fbShadow = device->CreateFrameBuffer();
+	fbShadow->SetColorBuffer(0, rbShadow);
+	fbShadow->SetDepthStencilBuffer(dsbShadow);
 	rbShadowBlur = device->CreateRenderBuffer(shadowMapSize, shadowMapSize, PixelFormats::floatR16);
 
 	// геометрия полноэкранного прохода
@@ -149,8 +152,7 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 	// shadow pass
 	csShadow.viewportWidth = shadowMapSize;
 	csShadow.viewportHeight = shadowMapSize;
-	csShadow.renderBuffers[0] = rbShadow;
-	csShadow.depthStencilBuffer = dsbShadow;
+	csShadow.frameBuffer = fbShadow;
 	shadowSceneUniforms.group->Apply(csShadow);
 
 	// пиксельный шейдер для теней
@@ -293,6 +295,11 @@ void Painter::ResizeScreen(int screenWidth, int screenHeight)
 
 	rbMain = device->CreateRenderBuffer(screenWidth, screenHeight, PixelFormats::floatRGB32);
 	dsbMain = device->CreateDepthStencilBuffer(screenWidth, screenHeight, false);
+	fbMain = device->CreateFrameBuffer();
+	fbMain->SetColorBuffer(0, rbMain);
+	fbMain->SetDepthStencilBuffer(dsbMain);
+	fbPreMain = device->CreateFrameBuffer();
+	fbPreMain->SetColorBuffer(0, rbMain);
 }
 
 Value<vec3> Painter::ApplyQuaternion(Value<vec4> q, Value<vec3> v)
@@ -393,8 +400,7 @@ void Painter::Draw()
 	{
 		ContextState& cs = context->GetTargetState();
 
-		cs.renderBuffers[0] = rbShadow;
-		cs.depthStencilBuffer = dsbShadow;
+		cs.frameBuffer = fbShadow;
 		cs.viewportWidth = shadowMapSize;
 		cs.viewportHeight = shadowMapSize;
 
@@ -403,40 +409,39 @@ void Painter::Draw()
 		shadowSceneUniforms.group->Upload(context);
 
 		// очистить карту теней
-		context->ClearDepthStencilBuffer(dsbShadow, 1.0f);
-		context->ClearRenderBuffer(rbShadow, farColor);
+		context->ClearColor(0, farColor);
+		context->ClearDepth(1.0f);
 
 		// выполнить размытие тени
 		// первый проход
 		cs = csShadowBlur;
-		cs.renderBuffers[0] = rbShadowBlur;
+		cs.frameBuffer = fbShadowBlur1;
 		shadowBlurUniforms.sourceSampler.SetTexture(rbShadow->GetTexture());
 		shadowBlurUniforms.sourceSampler.Apply(cs);
 		shadowBlurUniforms.blurDirection.SetValue(vec2(1.0f / shadowMapSize, 0));
 		shadowBlurUniforms.group->Upload(context);
-		context->ClearRenderBuffer(rbShadowBlur, zeroColor);
+		context->ClearColor(0, zeroColor);
 		context->Draw();
 		// второй проход
 		cs = csShadowBlur;
-		cs.renderBuffers[0] = rbShadow;
+		cs.frameBuffer = fbShadowBlur2;
 		shadowBlurUniforms.sourceSampler.SetTexture(rbShadowBlur->GetTexture());
 		shadowBlurUniforms.sourceSampler.Apply(cs);
 		shadowBlurUniforms.blurDirection.SetValue(vec2(0, 1.0f / shadowMapSize));
 		shadowBlurUniforms.group->Upload(context);
-		context->ClearRenderBuffer(rbShadow, zeroColor);
+		context->ClearColor(0, zeroColor);
 		context->Draw();
 	}
+
+	ContextState& cs = context->GetTargetState();
+
+	cs.frameBuffer = fbPreMain;
 
 	// очистить рендербуферы
 	float color[4] = { 0, 0, 0, 1 };
 	float colorDepth[4] = { 1, 1, 1, 1 };
-	context->ClearRenderBuffer(rbMain, color);
-	context->ClearDepthStencilBuffer(dsbMain, 1.0f);
+	context->ClearColor(0, color);
 
-	ContextState& cs = context->GetTargetState();
-
-	cs.renderBuffers[0] = rbMain;
-	cs.depthStencilBuffer = 0;
 	cs.viewportWidth = screenWidth;
 	cs.viewportHeight = screenHeight;
 	cs.cullMode = ContextState::cullModeBack;
@@ -455,7 +460,10 @@ void Painter::Draw()
 	context->Draw();
 
 	// установить параметры сцены
-	cs.depthStencilBuffer = dsbMain;
+	cs.frameBuffer = fbMain;
+
+	context->ClearDepth(1.0f);
+
 	colorSceneUniforms.viewProjTransform.SetValue(cameraViewProj);
 	colorSceneUniforms.invViewProjTransform.SetValue(cameraInvViewProj);
 	colorSceneUniforms.cameraPosition.SetValue(cameraPosition);
@@ -484,17 +492,14 @@ void Painter::Draw()
 	// всё, теперь постпроцессинг
 	float clearColor[] = { 0, 0, 0, 0 };
 
-	// получить backbuffer
-	ptr<RenderBuffer> rbBack = presenter->GetBackBuffer();
-
 	// tone mapping
 	cs = csTone;
-	cs.renderBuffers[0] = rbBack;
+	cs.frameBuffer = presenter->GetFrameBuffer();
 	cs.viewportWidth = screenWidth;
 	cs.viewportHeight = screenHeight;
 	toneUniforms.luminanceKey.SetValue(toneLuminanceKey);
 	toneUniforms.maxLuminance.SetValue(toneMaxLuminance);
 	toneUniforms.group->Upload(context);
-	context->ClearRenderBuffer(rbBack, zeroColor);
+	context->ClearColor(0, zeroColor);
 	context->Draw();
 }

@@ -17,7 +17,8 @@ namespace RVO
 		
 		size_t neighboursCount = spatialIndex->getNeighbours(position, neighborDist, 1, &(agentNeighbours[0]), maxResultLength, this);
 
-		std::vector<Line> orcaLines;
+		Line orcaLines[MAX_ORCA_LINES];
+		size_t orcaLinesCount = 0;
 
 		const float invTimeHorizon = 1.0f / timeHorizon;
 
@@ -83,14 +84,15 @@ namespace RVO
 			}
 
 			line.point = velocity_ + u * 0.5f;
-			orcaLines.push_back(line);
+			if (orcaLinesCount < MAX_ORCA_LINES)
+				orcaLines[orcaLinesCount++] = line;
 		}
 
-		size_t lineFail = linearProgram2(orcaLines, maxSpeed, prefVelocity, false, newVelocity_);
+		size_t lineFail = linearProgram2(orcaLines, orcaLinesCount, maxSpeed, prefVelocity, false, newVelocity_);
 
-		if (lineFail < orcaLines.size()) 
+		if (lineFail < orcaLinesCount) 
 		{
-			linearProgram3(orcaLines, 0, lineFail, maxSpeed, newVelocity_);
+			linearProgram3(orcaLines, orcaLinesCount, lineFail, maxSpeed, newVelocity_);
 		}
 	}
 

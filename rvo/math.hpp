@@ -8,6 +8,8 @@
 #include "geometry/objects.hpp"
 #include "geometry/constants.hpp"
 
+#define MAX_ORCA_LINES 128
+
 using namespace Inanity::Math;
 
 namespace RVO
@@ -36,7 +38,7 @@ namespace RVO
 	 * \param      result        A reference to the result of the linear program.
 	 * \return     True if successful.
 	 */
-	bool linearProgram1(const std::vector<Line>& lines, size_t lineNo, float radius, const vec2& optVelocity, bool directionOpt, vec2& result);
+	bool linearProgram1(Line (&lines)[MAX_ORCA_LINES], size_t linesCount, size_t lineNo, float radius, const vec2& optVelocity, bool directionOpt, vec2& result);
 
 	/**
 	 * \brief      Solves a two-dimensional linear program subject to linear
@@ -48,7 +50,7 @@ namespace RVO
 	 * \param      result        A reference to the result of the linear program.
 	 * \return     The number of the line it fails on, and the number of lines if successful.
 	 */
-	size_t linearProgram2(const std::vector<Line>& lines, float radius, const vec2& optVelocity, bool directionOpt, vec2& result);
+	size_t linearProgram2(Line (&lines)[MAX_ORCA_LINES], size_t linesCount, float radius, const vec2& optVelocity, bool directionOpt, vec2& result);
 
 	/**
 	 * \brief      Solves a two-dimensional linear program subject to linear
@@ -59,7 +61,7 @@ namespace RVO
 	 * \param      radius        The radius of the circular constraint.
 	 * \param      result        A reference to the result of the linear program.
 	 */
-	void linearProgram3(const std::vector<Line>& lines, size_t numObstLines, size_t beginLine, float radius, vec2& result);
+	void linearProgram3(Line (&lines)[MAX_ORCA_LINES], size_t linesCount, size_t beginLine, float radius, vec2& result);
 
 }
 

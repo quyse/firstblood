@@ -3,7 +3,7 @@
 namespace RVO
 {
 
-	bool linearProgram1(const std::vector<Line> &lines, size_t lineNo, float radius, const vec2 &optVelocity, bool directionOpt, vec2 &result)
+	bool linearProgram1(Line (&lines)[MAX_ORCA_LINES], size_t linesCount, size_t lineNo, float radius, const vec2 &optVelocity, bool directionOpt, vec2 &result)
 	{
 		const float dotProduct = dot(lines[lineNo].point, lines[lineNo].direction);
 		const float discriminant = sqr(dotProduct) + sqr(radius) - length2(lines[lineNo].point);
@@ -76,7 +76,7 @@ namespace RVO
 		return true;
 	}
 
-	size_t linearProgram2(const std::vector<Line> &lines, float radius, const vec2 &optVelocity, bool directionOpt, vec2 &result)
+	size_t linearProgram2(Line (&lines)[MAX_ORCA_LINES], size_t linesCount, float radius, const vec2 &optVelocity, bool directionOpt, vec2 &result)
 	{
 		if (directionOpt) {
 			/*
@@ -94,33 +94,34 @@ namespace RVO
 			result = optVelocity;
 		}
 
-		for (size_t i = 0; i < lines.size(); ++i) {
+		for (size_t i = 0; i < linesCount; ++i) {
 			if (det(lines[i].direction, lines[i].point - result) > 0.0f) {
 				/* Result does not satisfy constraint i. Compute new optimal result. */
 				const vec2 tempResult = result;
 
-				if (!linearProgram1(lines, i, radius, optVelocity, directionOpt, result)) {
+				if (!linearProgram1(lines, linesCount, i, radius, optVelocity, directionOpt, result)) {
 					result = tempResult;
 					return i;
 				}
 			}
 		}
 
-		return lines.size();
+		return linesCount;
 	}
 
 	// todo: remove obstacles-related parts
 	// todo: get rid of std::vector
-	void linearProgram3(const std::vector<Line> &lines, size_t numObstLines, size_t beginLine, float radius, vec2 &result)
+	void linearProgram3(Line (&lines)[MAX_ORCA_LINES], size_t linesCount, size_t beginLine, float radius, vec2 &result)
 	{
 		float distance = 0.0f;
 
-		for (size_t i = beginLine; i < lines.size(); ++i) {
+		for (size_t i = beginLine; i < linesCount; ++i) {
 			if (det(lines[i].direction, lines[i].point - result) > distance) {
 				/* Result does not satisfy constraint of line i. */
-				std::vector<Line> projLines(lines.begin(), lines.begin() + static_cast<ptrdiff_t>(numObstLines));
+				Line projLines[MAX_ORCA_LINES];
+				size_t projLinesCount = 0;
 
-				for (size_t j = numObstLines; j < i; ++j) {
+				for (size_t j = 0; j < i; ++j) {
 					Line line;
 
 					float determinant = det(lines[i].direction, lines[j].direction);
@@ -141,12 +142,12 @@ namespace RVO
 					}
 
 					line.direction = normalize(lines[j].direction - lines[i].direction);
-					projLines.push_back(line);
+					projLines[projLinesCount++] = line;
 				}
 
 				const vec2 tempResult = result;
 
-				if (linearProgram2(projLines, radius, vec2(-lines[i].direction.y, lines[i].direction.x), true, result) < projLines.size()) {
+				if (linearProgram2(projLines, projLinesCount, radius, vec2(-lines[i].direction.y, lines[i].direction.x), true, result) < projLinesCount) {
 					/* This should in principle not happen.  The result is by definition
 					 * already in the feasible region of this linear program. If it fails,
 					 * it is due to small floating point error, and the current result is

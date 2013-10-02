@@ -1,6 +1,7 @@
 #include "gamelogic/rvo.hpp"
 #include "rvo/simulator.hpp"
 #include "spatial/interfaces.hpp"
+#include <algorithm>
 
 namespace Firstblood
 {

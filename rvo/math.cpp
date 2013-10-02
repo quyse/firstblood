@@ -1,4 +1,5 @@
 #include "rvo/math.hpp"
+#include <algorithm>
 
 namespace RVO
 {

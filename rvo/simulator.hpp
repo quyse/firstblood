@@ -13,6 +13,7 @@ namespace RVO
 {
 
 	class Agent;
+	class NearestNeighborsFinder;
 
 	class Simulator 
 	{
@@ -20,24 +21,21 @@ namespace RVO
 
 	public:
 		Simulator(size_t maxAgentsCount);
-		~Simulator();
+		virtual ~Simulator();
 
-		Agent* addAgent(const vec2& position);
-		Agent* addAgent(const vec2& position, float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2& velocity = vec2());
+		Agent* addAgent(Agent* agent);
 		void removeAgent(Agent* agent);
 		size_t getNumAgents() const;
 		size_t getMaxAgents() const;
 		void setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2& velocity = vec2());
 
-		void doStep(float dt);
+		void doStep(float dt, NearestNeighborsFinder* nearestNeighborsFinder);
 
-	private:
+	protected:
 		std::vector<Agent*> _agents;
 		size_t _agentsCount;
 		size_t _maxAgentsCount;
 		Agent* defaultAgent_;
-		Spatial::ISpatialIndex2D<Agent>* _spatialIndex;
-		PoolAllocator* _allocator;
 	};
 }
 

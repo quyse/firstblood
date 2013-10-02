@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include "rvo/math.hpp"
 #include "spatial/interfaces.hpp"
+#include "rvo/interfaces.hpp"
+
+#define RVO_GET_NEAREST_AGENTS_MAX_BUFFER_SIZE (size_t)128
 
 namespace RVO 
 {
@@ -13,18 +16,14 @@ namespace RVO
 
 	class Agent 
 	{
-		friend class Simulator;
+	friend class Simulator;
 
 	public:
 		Agent();
-		// spatial index interface
-		inline vec2 getPosition() { return position; }
-		inline float getRadius() { return radius; }
-		inline uint32_t getMask() { return 1; }
-		inline bool raycast(const vec2& origin, const vec2& end, float& dist) { return true; }
+		virtual ~Agent();
 
 	private:
-		void computeNewVelocity(float dt, Spatial::ISpatialIndex2D<Agent>* spatialIndex);
+		void computeNewVelocity(float dt, NearestNeighborsFinder* nearestNeighborsFinder);
 		void update(float dt);
 
 	public:
@@ -36,8 +35,9 @@ namespace RVO
 		size_t maxNeighbors;
 		float maxSpeed;
 		bool immobilized;
+		uint32_t mask;
 
-	private:
+	protected:
 		vec2 velocity_;
 		vec2 newVelocity_;
 		size_t _index;

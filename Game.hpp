@@ -9,7 +9,8 @@
 #include "spatial/quadtree.hpp"
 #include "spatial/kd_tree.hpp"
 #include "rvo/simulator.hpp"
-#include "rvo/agent.hpp"
+#include "gamelogic/common.hpp"
+#include "gamelogic/rvo.hpp"
 
 struct QuadtreeDebugObject
 {
@@ -17,27 +18,10 @@ struct QuadtreeDebugObject
 	QuadtreeDebugObject(const vec2& inCenter, float inRadius) : center(inCenter), radius(inRadius) {};
 	vec2 center;
 	float radius;
-	bool raycast(const vec2& origin, const vec2& end, float& dist)
-	{
-		vec2 i0, i1;
-		float tmax;
-		return intersectSegmentSphere(origin, end, center, radius, i0, i1, dist, tmax);
-	}
-
-	inline float getRadius()
-	{
-		return radius;
-	}
-
-	inline vec2 getPosition()
-	{
-		return center;
-	}
-
-	inline uint32_t getMask()
-	{
-		return 1;
-	}
+	bool raycast(const vec2& origin, const vec2& end, float& dist) { return true; }
+	inline float getRadius() { return radius; }
+	inline vec2 getPosition() { return center; }
+	inline uint32_t getMask() { return 1; }
 };
 
 class Game : public Engine
@@ -51,9 +35,15 @@ protected:
 	//void drawQuadtreeNode(Quadtree::Node* node);
 	//void drawKdTreeNode(KdTree::Node* node);
 
+
 protected:
-	RVO::Simulator* rvoSimulation;
-	std::vector<std::pair<RVO::Agent*, vec2>> agents;
+	// spatial index
+	Spatial::IIndex2D<Firstblood::ISpatiallyIndexable>* spatialIndex;
+	// rvo
+	Firstblood::RvoSimulation* rvoSimulation;
+
+	// debug crap
+	std::vector<std::pair<Firstblood::RvoAgent*, vec2>> agents;
 	Spatial::Quadtree<QuadtreeDebugObject>* quadtree;
 	Spatial::KdTree<QuadtreeDebugObject>* kdTree;
 };

@@ -12,10 +12,10 @@ namespace Spatial
 	// vec2 T::getPosition - returns center of the bounding circle
 	// uint32_t T::getMask - bitfield which is used to ignore groups of objects when querying index
 	template<class T>
-	class ISpatialIndex2D
+	class IIndex2D
 	{
 	public:
-		virtual ~ISpatialIndex2D() {};
+		virtual ~IIndex2D() {};
 	
 		virtual void build(T* objects, size_t objectsCount) = 0;
 		virtual void build(T** objects, size_t objectsCount) = 0;

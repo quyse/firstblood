@@ -46,7 +46,7 @@ exports.configureLinker = function(executableFile, linker) {
 	var a = /^(([^\/]+)\/)[^\/]+$/.exec(executableFile);
 	linker.configuration = a[2];
 
-	var objects = ['main', 'Engine', 'Game', 'Geometry', 'GeometryFormats', 'Painter', 'rvo.simulator', 'rvo.agent', 'rvo.math'];
+	var objects = ['main', 'Engine', 'Game', 'Geometry', 'GeometryFormats', 'Painter', 'rvo.simulator', 'rvo.agent', 'rvo.math', 'gamelogic.rvo'];
 	for ( var i = 0; i < objects.length; ++i)
 		linker.addObjectFile(a[1] + objects[i]);
 

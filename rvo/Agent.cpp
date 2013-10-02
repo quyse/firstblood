@@ -2,20 +2,20 @@
 #include "rvo/simulator.hpp"
 #include "geometry/distance.hpp"
 
-#define GET_NEAREST_AGENTS_MAX_BUFFER_SIZE (size_t)128
-
 namespace RVO 
 {
 	
-	Agent::Agent() : maxNeighbors(0), maxSpeed(0.0f), neighborDist(0.0f), radius(0.0f), timeHorizon(0.0f), immobilized(false) {}
+	Agent::Agent() : maxNeighbors(0), maxSpeed(0.0f), neighborDist(0.0f), radius(0.0f), timeHorizon(0.0f), immobilized(false), mask(1) {}
+
+	Agent::~Agent() {};
 
 	// todo: get rid of std::vector
-	void Agent::computeNewVelocity(float dt, Spatial::ISpatialIndex2D<Agent>* spatialIndex)
+	void Agent::computeNewVelocity(float dt, NearestNeighborsFinder* nearestNeighborsFinder)
 	{
-		size_t maxResultLength = std::min(GET_NEAREST_AGENTS_MAX_BUFFER_SIZE, maxNeighbors);
-		Agent* agentNeighbours[GET_NEAREST_AGENTS_MAX_BUFFER_SIZE];
+		size_t maxResultLength = std::min(RVO_GET_NEAREST_AGENTS_MAX_BUFFER_SIZE, maxNeighbors);
+		NeighborEntity agentNeighbours[RVO_GET_NEAREST_AGENTS_MAX_BUFFER_SIZE];
 		
-		size_t neighboursCount = spatialIndex->getNeighbours(position, neighborDist, 1, &(agentNeighbours[0]), maxResultLength, this);
+		size_t neighboursCount = nearestNeighborsFinder->find(this, agentNeighbours, maxResultLength);
 
 		Line orcaLines[MAX_ORCA_LINES];
 		size_t orcaLinesCount = 0;
@@ -24,12 +24,12 @@ namespace RVO
 
 		/* Create agent ORCA lines. */
 		for (size_t i = 0; i < neighboursCount; ++i) {
-			const Agent *const other = agentNeighbours[i];
+			NeighborEntity& other = agentNeighbours[i];
 
-			const vec2 relativePosition = other->position - position;
-			const vec2 relativeVelocity = velocity_ - other->velocity_;
+			const vec2 relativePosition = other.position - position;
+			const vec2 relativeVelocity = velocity_ - other.velocity;
 			const float distSq = length2(relativePosition);
-			const float combinedRadius = radius + other->radius;
+			const float combinedRadius = radius + other.radius;
 			const float combinedRadiusSq = sqr(combinedRadius);
 
 			Line line;

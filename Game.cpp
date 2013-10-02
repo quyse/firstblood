@@ -16,16 +16,28 @@ float badRandom(float a, float b)
 
 Game::Game()
 {
+	// spatial index
+	spatialIndex = new Spatial::Quadtree<Firstblood::ISpatiallyIndexable>(5, 512.0f, 32 * 1024); 
+
+	// rvo
+	rvoSimulation = new Firstblood::RvoSimulation(256, spatialIndex);
+
+	// debug crap
 	quadtree = new Spatial::Quadtree<QuadtreeDebugObject>(4, 32, 1024 * 1024);
 	kdTree = new Spatial::KdTree<QuadtreeDebugObject>(4, 1024 * 1024);
-	rvoSimulation = new RVO::Simulator(256);
 }
-
 
 Game::~Game()
 {
+	// debug crap
 	delete quadtree;
+	delete kdTree;
+
+	// rvo
 	delete rvoSimulation;
+
+	// spatial index
+	delete spatialIndex;
 }
 
 
@@ -109,7 +121,7 @@ void Game::Step(float frameTime)
 	size_t l = rvoSimulation->getNumAgents();
 	for (size_t i = 0; i < l; ++i) 
 	{
-		std::pair<RVO::Agent*, vec2> agent = agents[i];
+		std::pair<Firstblood::RvoAgent*, vec2> agent = agents[i];
 		vec2 goalVector = agent.second - agent.first->position;
 		if (length2(goalVector) > 1.0f) 
 		{
@@ -120,22 +132,34 @@ void Game::Step(float frameTime)
 
 	if (rvoSimulation->getMaxAgents() > rvoSimulation->getNumAgents())
 	{
-		RVO::Agent* agent = rvoSimulation->addAgent(vec2(badRandom(0.0f, 1.0f) < 0.5f ? -25.0f : 25.0f, badRandom(-100.0f, 100.0f)));
+		Firstblood::RvoAgent* agent = rvoSimulation->create(vec2(badRandom(0.0f, 1.0f) < 0.5f ? -25.0f : 25.0f, badRandom(-100.0f, 100.0f)));
 		agent->maxSpeed = 2.0f;
 		agents.push_back(std::make_pair(agent, -agent->position));
 	}
 
-	rvoSimulation->doStep(20 * frameTime);
+	// purge spatial index
+	spatialIndex->purge();
+	
+	// collect spatial entities from all subsystems
+	size_t entitiesCollected = 0;
+	Firstblood::ISpatiallyIndexable* spatialEntities[1024];
+	entitiesCollected += rvoSimulation->collectSpatialData(spatialEntities, 1024 - entitiesCollected);
+
+	// build spatial index
+	spatialIndex->build(spatialEntities, entitiesCollected);
+
+	// rvo simulation
+	rvoSimulation->update(20 * frameTime);
 
 	l = rvoSimulation->getNumAgents();
 	for (size_t i = 0; i < l; i++)
 	{
-		RVO::Agent* agent = agents[i].first;
+		Firstblood::RvoAgent* agent = agents[i].first;
 		vec2 hisGoal = agents[i].second;
 		float distance = length(agent->position - hisGoal);
 		if (!agent->immobilized && distance < 1.0f)
 		{
-			rvoSimulation->removeAgent(agent);
+			rvoSimulation->destroy(agent);
 			agents[i] = agents[l - 1];
 			agents.pop_back();
 			--i;

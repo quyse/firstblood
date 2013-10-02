@@ -58,7 +58,7 @@ namespace Spatial
 
 	// base tree class, containing utility Node typedef and implementations of getNearestNeighbours and rayCast queries
 	template<class T, template<class T> class Descendant, template<class T> class Node>
-	class TreeBase : public ISpatialIndex2D<T>
+	class TreeBase : public IIndex2D<T>
 	{
 	public:
 		virtual T* raycast(const vec2& origin, const vec2& end, uint32_t mask, float& t, T* skipEntity = nullptr)

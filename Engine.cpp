@@ -160,8 +160,6 @@ void Engine::Tick()
 	static vec3 cameraPosition(0, 0, 100);
 	cameraPosition += cameraMove * frameTime;
 
-	context->Reset();
-
 	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition, cameraPosition + cameraDirection, vec3(0, 1, -1));
 //	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition = vec3(10, 10, 50), vec3(0, 0, 0), vec3(0, 0, 1));
 	mat4x4 projMatrix = CreateProjectionPerspectiveFovMatrix(3.1415926535897932f / 4, float(screenWidth) / float(screenHeight), 0.1f, 1000.0f);
@@ -182,7 +180,12 @@ void Engine::Tick()
 
 	painter->Draw();
 
-	textDrawer->Prepare(context);
+#if 0
+
+	Context::LetFrameBuffer lfb(context, presenter->GetFrameBuffer());
+	Context::LetViewport lv(context, screenWidth, screenHeight);
+
+	textDrawer->Prepare(context, screenWidth, screenHeight);
 	textDrawer->SetFont(font);
 
 	// fps
@@ -200,11 +203,12 @@ void Engine::Tick()
 		}
 		char fpsString[64];
 		sprintf(fpsString, "frameTime: %.6f sec, FPS: %.6f\n", lastAllTicksTime / needTickCount, needTickCount / lastAllTicksTime);
-		textDrawer->DrawTextLine(fpsString, -0.95f - 2.0f / context->GetTargetState().viewportWidth, -0.95f - 2.0f / context->GetTargetState().viewportHeight, vec4(1, 1, 1, 1), FontAlignments::Left | FontAlignments::Bottom);
+		textDrawer->DrawTextLine(fpsString, -0.95f - 2.0f / screenWidth, -0.95f - 2.0f / screenHeight, vec4(1, 1, 1, 1), FontAlignments::Left | FontAlignments::Bottom);
 		textDrawer->DrawTextLine(fpsString, -0.95f, -0.95f, vec4(1, 0, 0, 1), FontAlignments::Left | FontAlignments::Bottom);
 	}
 
 	textDrawer->Flush();
+#endif
 
 	presenter->Present();
 }

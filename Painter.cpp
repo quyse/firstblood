@@ -137,37 +137,21 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 	//** шейдеры
 
 	Temp<vec4> tmpPosition;
-	debugShaders.vs = shaderCache->GetVertexShader((
+	vsDebug = shaderCache->GetVertexShader((
 		tmpPosition = mul(colorSceneUniforms.viewProjTransform, newvec4(debugAttributes.position, 1.0f)),
 		//tmpPosition = newvec4(debugAttributes.position, 1.0f),
 		setPosition(tmpPosition),
 		iColor = debugAttributes.color
 		));
-	debugShaders.ps = shaderCache->GetPixelShader((
+	psDebug = shaderCache->GetPixelShader((
 		fTarget = newvec4(iColor, 1)
 		));
 
-	//** инициализировать состояния конвейера
-
-	// shadow pass
-	csShadow.viewportWidth = shadowMapSize;
-	csShadow.viewportHeight = shadowMapSize;
-	csShadow.frameBuffer = fbShadow;
-	shadowSceneUniforms.group->Apply(csShadow);
-
-	// пиксельный шейдер для теней
-	csShadow.pixelShader = shaderCache->GetPixelShader((
-		fTarget = newvec4(iDepth, 0, 0, 0)
-		));
-
-	//** шейдеры и состояния постпроцессинга и размытия теней
+	//** шейдеры постпроцессинга и размытия теней
 	{
-		ContextState csFilter;
-		csFilter.attributeBinding = quad.ab;
-		csFilter.vertexBuffers[0] = quad.vb;
-		csFilter.indexBuffer = quad.ib;
-		csFilter.depthTestFunc = ContextState::depthTestFuncAlways;
-		csFilter.depthWrite = false;
+		abFilter = quad.ab;
+		vbFilter = quad.vb;
+		ibFilter = quad.ib;
 
 		// промежуточные
 		Interpolant<vec2> iTexcoord(0);
@@ -175,46 +159,25 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 		Fragment<vec4> fTarget(0);
 
 		// вершинный шейдер - общий для всех постпроцессингов
-		ptr<VertexShader> vertexShader = shaderCache->GetVertexShader((
+		vsFilter = shaderCache->GetVertexShader((
 			setPosition(quad.aPosition),
 			iTexcoord = screenToTexture(quad.aPosition["xy"])
 			));
 
-		csFilter.vertexShader = vertexShader;
-
 		// шейдеры неба
-		ptr<VertexShader> vsSky = shaderCache->GetVertexShader((
+		vsSky = shaderCache->GetVertexShader((
 			setPosition(newvec4(quad.aPosition["xy"], 1.0f, 1.0f)),
 			iTexcoord = screenToTexture(quad.aPosition["xy"])
 			));
 		Temp<vec4> p;
 		Temp<float> q;
-		ptr<PixelShader> psSky = shaderCache->GetPixelShader((
+		psSky = shaderCache->GetPixelShader((
 			p = mul(skyUniforms.invViewProjTransform, newvec4(iTexcoord * newvec2(2.0f, -2.0f) + newvec2(-1.0f, 1.0f), 1.0f, 1.0f)),
 			q = normalize(p["xyz"] / p["w"] - skyUniforms.cameraPosition)["z"] * Value<float>(0.5f) + Value<float>(0.5f),
-			fTarget = newvec4(q, q, q, 1)
+			fTarget = newvec4(p, p, p, 1)//newvec4(q, q, q, 1)
 			));
 
-		// пиксельный шейдер для размытия тени
-		ptr<PixelShader> psShadowBlur;
-		{
-			Temp<float> sum;
-			Expression shader = (
-				sum = 0
-				);
-			static const float taps[] = { 0.006f, 0.061f, 0.242f, 0.383f, 0.242f, 0.061f, 0.006f };
-			for(int i = 0; i < sizeof(taps) / sizeof(taps[0]); ++i)
-				shader.Append((
-					sum = sum + exp(shadowBlurUniforms.sourceSampler.Sample(iTexcoord + shadowBlurUniforms.blurDirection * Value<float>((float)i - 3))) * Value<float>(taps[i])
-					));
-			shader.Append((
-				fTarget = newvec4(log(sum), 0, 0, 1)
-				));
-			psShadowBlur = shaderCache->GetPixelShader(shader);
-		}
-
 		// шейдер tone mapping
-		ptr<PixelShader> psTone;
 		{
 			Temp<vec3> color;
 			Temp<float> luminance, relativeLuminance, intensity;
@@ -235,53 +198,29 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 			psTone = shaderCache->GetPixelShader(shader);
 		}
 
-		csShadowBlur = csFilter;
-		csTone = csFilter;
-
 		// point sampler
-		ptr<SamplerState> pointSampler = device->CreateSamplerState();
-		pointSampler->SetFilter(SamplerState::filterPoint, SamplerState::filterPoint, SamplerState::filterPoint);
-		pointSampler->SetWrap(SamplerState::wrapClamp, SamplerState::wrapClamp, SamplerState::wrapClamp);
+		ssPoint = device->CreateSamplerState();
+		ssPoint->SetFilter(SamplerState::filterPoint, SamplerState::filterPoint, SamplerState::filterPoint);
+		ssPoint->SetWrap(SamplerState::wrapClamp, SamplerState::wrapClamp, SamplerState::wrapClamp);
 		// linear sampler
-		ptr<SamplerState> linearSampler = device->CreateSamplerState();
-		linearSampler->SetFilter(SamplerState::filterLinear, SamplerState::filterLinear, SamplerState::filterLinear);
-		linearSampler->SetWrap(SamplerState::wrapClamp, SamplerState::wrapClamp, SamplerState::wrapClamp);
+		ssLinear = device->CreateSamplerState();
+		ssLinear->SetFilter(SamplerState::filterLinear, SamplerState::filterLinear, SamplerState::filterLinear);
+		ssLinear->SetWrap(SamplerState::wrapClamp, SamplerState::wrapClamp, SamplerState::wrapClamp);
 		// point sampler with border=0
-		ptr<SamplerState> pointBorderSampler = device->CreateSamplerState();
-		pointBorderSampler->SetFilter(SamplerState::filterPoint, SamplerState::filterPoint, SamplerState::filterPoint);
-		pointBorderSampler->SetWrap(SamplerState::wrapBorder, SamplerState::wrapBorder, SamplerState::wrapBorder);
+		ssPointBorder = device->CreateSamplerState();
+		ssPointBorder->SetFilter(SamplerState::filterPoint, SamplerState::filterPoint, SamplerState::filterPoint);
+		ssPointBorder->SetWrap(SamplerState::wrapBorder, SamplerState::wrapBorder, SamplerState::wrapBorder);
 		float borderColor[] = { 0, 0, 0, 0 };
-		pointBorderSampler->SetBorderColor(borderColor);
-
-		// состояние для размытия тени
-		csShadowBlur.viewportWidth = shadowMapSize;
-		csShadowBlur.viewportHeight = shadowMapSize;
-		shadowBlurUniforms.sourceSampler.SetSamplerState(pointBorderSampler);
-		shadowBlurUniforms.sourceSampler.Apply(csShadowBlur);
-		shadowBlurUniforms.group->Apply(csShadowBlur);
-		csShadowBlur.pixelShader = psShadowBlur;
-
-		// состояние для неба
-		csSky = csFilter;
-		csSky.vertexShader = vsSky;
-		csSky.pixelShader = psSky;
-		skyUniforms.group->Apply(csSky);
-
-		// tone mapping
-		toneUniforms.sourceSampler.SetTexture(rbMain->GetTexture());
-		toneUniforms.sourceSampler.SetSamplerState(pointSampler);
-		toneUniforms.sourceSampler.Apply(csTone);
-		toneUniforms.group->Apply(csTone);
-		csTone.pixelShader = psTone;
+		ssPointBorder->SetBorderColor(borderColor);
 	}
 
-	debugVertexBuffer = device->CreateDynamicVertexBuffer(debugVerticesBufferCount * sizeof(GeometryFormats::Debug::Vertex), geometryFormats->debug.vl);
+	vbDebug = device->CreateDynamicVertexBuffer(debugVerticesBufferCount * sizeof(GeometryFormats::Debug::Vertex), geometryFormats->debug.vl);
 	{
 		ptr<File> file = NEW(MemoryFile(debugVerticesBufferCount * sizeof(unsigned short)));
 		unsigned short* indices = (unsigned short*)file->GetData();
 		for(int i = 0; i < debugVerticesBufferCount; ++i)
 			indices[i] = i;
-		debugIndexBuffer = device->CreateStaticIndexBuffer(file, sizeof(unsigned short));
+		ibDebug = device->CreateStaticIndexBuffer(file, sizeof(unsigned short));
 	}
 }
 
@@ -392,114 +331,94 @@ void Painter::SetupPostprocess(float bloomLimit, float toneLuminanceKey, float t
 
 void Painter::Draw()
 {
+#if 1
 	float zeroColor[] = { 0, 0, 0, 0 };
 	float farColor[] = { 1e8, 1e8, 1e8, 1e8 };
 
-	// выполнить теневой проход
-	if(0)
+	Context::LetViewport lv(context, screenWidth, screenHeight);
+	Context::LetCullMode lcm(context, Context::cullModeBack);
+
+	// предварительное рисование и небо
 	{
-		ContextState& cs = context->GetTargetState();
+		Context::LetFrameBuffer lfb(context, fbPreMain);
 
-		cs.frameBuffer = fbShadow;
-		cs.viewportWidth = shadowMapSize;
-		cs.viewportHeight = shadowMapSize;
+		// очистить рендербуферы
+		float color[4] = { 0.1f, 0, 0, 1 };
+		context->ClearColor(0, color);
 
-		// указать трансформацию
-		shadowSceneUniforms.viewProjTransform.SetValue(sunTransform);
-		shadowSceneUniforms.group->Upload(context);
+#if 1
+		// нарисовать небо
+		skyUniforms.invViewProjTransform.SetValue(cameraInvViewProj);
+		skyUniforms.cameraPosition.SetValue(cameraPosition);
+		skyUniforms.group->Upload(context);
+		Context::LetUniformBuffer lubSky(context, skyUniforms.group);
+		Context::LetVertexShader lvs(context, vsSky);
+		Context::LetPixelShader lps(context, psSky);
+		Context::LetVertexBuffer lvb(context, 0, vbFilter);
+		Context::LetIndexBuffer lib(context, ibFilter);
+		Context::LetAttributeBinding lab(context, abFilter);
+		Context::LetDepthTestFunc ldtf(context, Context::depthTestFuncAlways);
+		Context::LetDepthWrite ldw(context, false);
+		Context::LetCullMode lcm(context, Context::cullModeNone);
+		context->Draw();
+#endif
+	}
 
-		// очистить карту теней
-		context->ClearColor(0, farColor);
+#if 0
+	// основное рисование
+	{
+		Context::LetFrameBuffer lfb(context, fbMain);
+
 		context->ClearDepth(1.0f);
 
-		// выполнить размытие тени
-		// первый проход
-		cs = csShadowBlur;
-		cs.frameBuffer = fbShadowBlur1;
-		shadowBlurUniforms.sourceSampler.SetTexture(rbShadow->GetTexture());
-		shadowBlurUniforms.sourceSampler.Apply(cs);
-		shadowBlurUniforms.blurDirection.SetValue(vec2(1.0f / shadowMapSize, 0));
-		shadowBlurUniforms.group->Upload(context);
-		context->ClearColor(0, zeroColor);
-		context->Draw();
-		// второй проход
-		cs = csShadowBlur;
-		cs.frameBuffer = fbShadowBlur2;
-		shadowBlurUniforms.sourceSampler.SetTexture(rbShadowBlur->GetTexture());
-		shadowBlurUniforms.sourceSampler.Apply(cs);
-		shadowBlurUniforms.blurDirection.SetValue(vec2(0, 1.0f / shadowMapSize));
-		shadowBlurUniforms.group->Upload(context);
-		context->ClearColor(0, zeroColor);
-		context->Draw();
+		colorSceneUniforms.viewProjTransform.SetValue(cameraViewProj);
+		colorSceneUniforms.invViewProjTransform.SetValue(cameraInvViewProj);
+		colorSceneUniforms.cameraPosition.SetValue(cameraPosition);
+		colorSceneUniforms.sunTransform.SetValue(sunTransform);
+		colorSceneUniforms.sunLight.SetValue(sunLight);
+		colorSceneUniforms.group->Upload(context);
+		Context::LetUniformBuffer lubColorScene(context, colorSceneUniforms.group);
+
+		//** нарисовать отладочную геометрию
+
+		Context::LetAttributeBinding lab(context, debugAttributes.ab);
+		Context::LetVertexShader lvs(context, vsDebug);
+		Context::LetPixelShader lps(context, psDebug);
+		Context::LetVertexBuffer lvb(context, 0, vbDebug);
+		Context::LetIndexBuffer lib(context, ibDebug);
+
+		for(int i = 0; i < (int)debugVertices.size(); i += debugVerticesBufferCount)
+		{
+			int verticesCount = std::min((int)debugVertices.size() - i, debugVerticesBufferCount);
+			context->UploadVertexBufferData(vbDebug, &debugVertices[i], verticesCount * sizeof(GeometryFormats::Debug::Vertex));
+
+			context->Draw(verticesCount);
+		}
 	}
-
-	ContextState& cs = context->GetTargetState();
-
-	cs.frameBuffer = fbPreMain;
-
-	// очистить рендербуферы
-	float color[4] = { 0, 0, 0, 1 };
-	float colorDepth[4] = { 1, 1, 1, 1 };
-	context->ClearColor(0, color);
-
-	cs.viewportWidth = screenWidth;
-	cs.viewportHeight = screenHeight;
-	cs.cullMode = ContextState::cullModeBack;
-
-	// нарисовать небо
-	skyUniforms.invViewProjTransform.SetValue(cameraInvViewProj);
-	skyUniforms.cameraPosition.SetValue(cameraPosition);
-	skyUniforms.group->Apply(cs);
-	skyUniforms.group->Upload(context);
-	cs.vertexShader = csSky.vertexShader;
-	cs.pixelShader = csSky.pixelShader;
-	cs.vertexBuffers[0] = csSky.vertexBuffers[0];
-	cs.indexBuffer = csSky.indexBuffer;
-	cs.attributeBinding = csSky.attributeBinding;
-	cs.depthWrite = false;
-	context->Draw();
-
-	// установить параметры сцены
-	cs.frameBuffer = fbMain;
-
-	context->ClearDepth(1.0f);
-
-	colorSceneUniforms.viewProjTransform.SetValue(cameraViewProj);
-	colorSceneUniforms.invViewProjTransform.SetValue(cameraInvViewProj);
-	colorSceneUniforms.cameraPosition.SetValue(cameraPosition);
-	colorSceneUniforms.sunTransform.SetValue(sunTransform);
-	colorSceneUniforms.sunLight.SetValue(sunLight);
-	//colorSceneUniforms.sunShadowSampler.Apply(cs);
-	colorSceneUniforms.group->Apply(cs);
-	colorSceneUniforms.group->Upload(context);
-
-	//** нарисовать отладочную геометрию
-
-	cs.attributeBinding = debugAttributes.ab;
-	cs.vertexShader = debugShaders.vs;
-	cs.pixelShader = debugShaders.ps;
-	cs.vertexBuffers[0] = debugVertexBuffer;
-	cs.indexBuffer = debugIndexBuffer;
-
-	for(int i = 0; i < (int)debugVertices.size(); i += debugVerticesBufferCount)
-	{
-		int verticesCount = std::min((int)debugVertices.size() - i, debugVerticesBufferCount);
-		context->SetVertexBufferData(debugVertexBuffer, &debugVertices[i], verticesCount * sizeof(GeometryFormats::Debug::Vertex));
-
-		context->Draw(verticesCount);
-	}
+#endif
+#endif
 
 	// всё, теперь постпроцессинг
-	float clearColor[] = { 0, 0, 0, 0 };
+	{
+		float clearColor[] = { 0, 1, 0, 0 };
 
-	// tone mapping
-	cs = csTone;
-	cs.frameBuffer = presenter->GetFrameBuffer();
-	cs.viewportWidth = screenWidth;
-	cs.viewportHeight = screenHeight;
-	toneUniforms.luminanceKey.SetValue(toneLuminanceKey);
-	toneUniforms.maxLuminance.SetValue(toneMaxLuminance);
-	toneUniforms.group->Upload(context);
-	context->ClearColor(0, zeroColor);
-	context->Draw();
+		// tone mapping
+		Context::LetFrameBuffer lfb(context, presenter->GetFrameBuffer());
+		Context::LetViewport lv(context, screenWidth, screenHeight);
+#if 1
+		toneUniforms.luminanceKey.SetValue(toneLuminanceKey);
+		toneUniforms.maxLuminance.SetValue(toneMaxLuminance);
+		toneUniforms.group->Upload(context);
+		Context::LetUniformBuffer lubTone(context, toneUniforms.group);
+		Context::LetSampler lsSource(context, toneUniforms.sourceSampler, rbMain->GetTexture(), ssPoint);
+		Context::LetVertexBuffer lvb(context, 0, vbFilter);
+		Context::LetIndexBuffer lib(context, ibFilter);
+		Context::LetAttributeBinding lab(context, abFilter);
+		Context::LetVertexShader lvs(context, vsFilter);
+		Context::LetPixelShader lps(context, psTone);
+#endif
+		context->ClearColor(0, clearColor);
+
+		context->Draw();
+	}
 }

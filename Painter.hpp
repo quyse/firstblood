@@ -43,6 +43,24 @@ private:
 	ptr<FrameBuffer> fbMain, fbPreMain, fbShadow;
 	ptr<FrameBuffer> fbShadowBlur1, fbShadowBlur2;
 
+	//*** Геометрия.
+	ptr<AttributeBinding> abFilter;
+	ptr<VertexBuffer> vbFilter;
+	ptr<IndexBuffer> ibFilter;
+	ptr<VertexBuffer> vbDebug;
+	ptr<IndexBuffer> ibDebug;
+
+	//*** Шейдеры.
+	ptr<VertexShader> vsFilter;
+	ptr<VertexShader> vsSky;
+	ptr<PixelShader> psSky;
+	ptr<VertexShader> vsDebug;
+	ptr<PixelShader> psDebug;
+	ptr<PixelShader> psTone;
+
+	//*** Семплеры.
+	ptr<SamplerState> ssPoint, ssLinear, ssPointBorder;
+
 	//*** Атрибуты.
 	/// Атрибуты отладочной геометрии.
 	struct DebugAttributes
@@ -115,27 +133,6 @@ private:
 
 	/// Выходной цвет.
 	Fragment<vec4> fTarget;
-
-	/// Вершинный буфер для отладочной геометрии.
-	ptr<VertexBuffer> debugVertexBuffer;
-	ptr<IndexBuffer> debugIndexBuffer;
-
-	//*** Разное для шейдеров.
-	struct DebugShaders
-	{
-		ptr<VertexShader> vs;
-		ptr<PixelShader> ps;
-	} debugShaders;
-
-	//** Состояния конвейера.
-	/// Состояние для shadow pass.
-	ContextState csShadow;
-	/// Состояние для прохода размытия.
-	ContextState csShadowBlur;
-	/// Sky.
-	ContextState csSky;
-	/// Tone mapping.
-	ContextState csTone;
 
 private:
 	void ResizeScreen(int screenWidth, int screenHeight);

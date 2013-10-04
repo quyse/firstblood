@@ -19,18 +19,18 @@ namespace Spatial
 		KdTree(size_t maxLeafSize, size_t maxMemory) : _maxLeafSize(maxLeafSize)
 		{
 			_arena = new ArenaAllocator(maxMemory);
-			_root = _arena->alloc<KdTreeNode<T>>();
+			this->_root = _arena->alloc<KdTreeNode<T>>();
 		}
 
 		virtual ~KdTree()
 		{
-			delete _root;
+			delete this->_root;
 		}
 
 		virtual void purge()
 		{
 			_arena->purge();
-			_root = _arena->alloc<KdTreeNode<T>>();
+			this->_root = _arena->alloc<KdTreeNode<T>>();
 		}
 
 		virtual void build(T* objects, size_t objectsCount)
@@ -46,7 +46,7 @@ namespace Spatial
 					wrap->next = wrappedObjects;
 					wrappedObjects = wrap;
 				}
-				buildRecursively(_root, wrappedObjects, objectsCount);
+				buildRecursively(this->_root, wrappedObjects, objectsCount);
 			}
 		}
 
@@ -63,7 +63,7 @@ namespace Spatial
 					wrap->next = wrappedObjects;
 					wrappedObjects = wrap;
 				}
-				buildRecursively(_root, wrappedObjects, objectsCount);
+				buildRecursively(this->_root, wrappedObjects, objectsCount);
 			}
 		}
 

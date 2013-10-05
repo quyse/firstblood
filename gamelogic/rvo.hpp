@@ -5,8 +5,11 @@
 #include "rvo/interfaces.hpp"
 #include "rvo/simulator.hpp"
 
-template<class T>
-class Spatial::IIndex2D;
+namespace Spatial
+{
+	template<class T>
+	class IIndex2D;
+};
 
 namespace Firstblood
 {

@@ -270,7 +270,7 @@ void Game::Step(float frameTime)
 		float radius = dudes[i]->radius;
 		painter->DebugDrawRectangle(center.x - radius, center.y - radius, center.x + radius, center.y + radius, 2, vec3(1, 1, 0), 0.2f);		
 	}*/
-	Sleep(10);
+	Thread::Sleep(10);
 
 #else
 	painter->DebugDrawRectangle(0, 0, 20, 20, 0, vec3(1, 1, 1));

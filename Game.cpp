@@ -5,6 +5,9 @@
 #include <random>
 #include "profiler/scope_profiler.h"
 
+#define AAA(name) \
+	printf("%s", #name);
+
 static const float pi = acos(-1.0f);
 
 static bool rvoExampleInitialized = false;
@@ -16,11 +19,17 @@ float badRandom(float a, float b)
 
 Game::Game()
 {
+	AAA(test);
+	int a[2][2]; int b[2];
+	int c = a[0][b[0]] + b[0][a[0]];
 	// spatial index
 	spatialIndex = new Spatial::Quadtree<Firstblood::ISpatiallyIndexable>(5, 512.0f, 32 * 1024); 
 
 	// rvo
 	rvoSimulation = new Firstblood::RvoSimulation(256, spatialIndex);
+
+	// scripts
+	scripts = new Firstblood::ScriptSystem(painter);
 
 	// debug crap
 	quadtree = new Spatial::Quadtree<QuadtreeDebugObject>(4, 32, 1024 * 1024);
@@ -35,6 +44,9 @@ Game::~Game()
 
 	// rvo
 	delete rvoSimulation;
+
+	// scripts
+	delete scripts;
 
 	// spatial index
 	delete spatialIndex;
@@ -150,6 +162,9 @@ void Game::Step(float frameTime)
 
 	// rvo simulation
 	rvoSimulation->update(20 * frameTime);
+
+	// run scripts 
+	scripts->update(20 * frameTime);
 
 	l = rvoSimulation->getNumAgents();
 	for (size_t i = 0; i < l; i++)

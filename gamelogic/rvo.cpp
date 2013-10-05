@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "gamelogic/rvo.hpp"
 #include "rvo/simulator.hpp"
 #include "spatial/interfaces.hpp"
@@ -17,7 +18,9 @@ namespace Firstblood
 
 	RvoAgent* RvoSimulation::create(const vec2& position)
 	{
-		RvoAgent* agent = _allocator->alloc<RvoAgent>();
+		// todo: remove this crap when Inanity::ReferenceCounted will be available
+		void* agentMemory = _allocator->allocMemory(sizeof(RvoAgent));
+		RvoAgent* agent = new (agentMemory) RvoAgent;
 		agent->position = position;
 		addAgent(agent);
 		return agent;

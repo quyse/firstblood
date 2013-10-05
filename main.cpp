@@ -14,7 +14,7 @@ int main()
 #endif
 {
 #if defined(_MSVC_BUILD)
-	SetCurrentDirectoryA("F:/firstblood/msvc/firstblood/Debug");
+	SetCurrentDirectoryA("F:/firstblood/game/");
 #endif
 	try
 	{
@@ -27,5 +27,7 @@ int main()
 		std::cout << s.str() << '\n';
 	}
 
+	std::string s;
+	std::getline(std::cin, s);
 	return 0;
 }

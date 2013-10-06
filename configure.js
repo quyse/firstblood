@@ -21,8 +21,8 @@ var staticLibraries = [
 	'libinanity-crypto',
 	'libinanity-sqlitefs',
 	'libinanity-compress',
-	'libinanity-base',
-	'libinanity-v8'
+	'libinanity-v8',
+	'libinanity-base'
 ];
 var staticDepsLibraries = [
 	{ dir: 'v8', lib: 'libv8_base' },

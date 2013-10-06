@@ -1,16 +1,44 @@
 /** Standard events **/
+var GenericEvent = function(type)
+{
+	this.type = type;
+};
+
 var FrameEvent = function(dt)
 {
 	this.dt = dt;
 	this.type = Event.FRAME;
-}
+};
+
+var MouseEvent = function(x, y)
+{
+	this.x = x;
+	this.y = y;
+	this.type = Event.MOUSE;
+};
+
+var KeyEvent = function(keyCode, isDown, isCtrlDown, isShiftDown)
+{
+	this.keyCode = keyCode;
+	this.isDown = isDown;
+	this.isUp = !isDown;
+	this.isCtrlDown = isCtrlDown;
+	this.isShiftDown = isShiftDown;
+	this.type = Event.KEY;
+};
 
 this.Event = {
 	// ids
 	FRAME: "event_frame",
+	MOUSE: "event_mouse",
+	KEY: "event_key",
+	APP_LOSE_FOCUS: "lose_focus",
+	APP_GAIN_FOCUS: "gain_focus",
 	
 	// objects
-	FrameEvent: FrameEvent
+	FrameEvent: FrameEvent,
+	MouseEvent: MouseEvent,
+	KeyEvent: KeyEvent
 };
 
 

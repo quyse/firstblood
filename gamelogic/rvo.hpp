@@ -29,9 +29,6 @@ namespace Firstblood
 
 		void setMaxSpeed(float value);
 		void setPrefVelocity(const vec2& velocity);
-		// todo: remove this crap when c++->script conversion routines for math types are available
-		float getX() { return position.x; };
-		float getY() { return position.y; };
 
 		void FreeAsNotReferenced();
 

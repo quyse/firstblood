@@ -19,10 +19,9 @@ Main.prototype = {
 			var agent = agentWithGoal[0];
 			var goal = agentWithGoal[1];
 			
-			var agentX = agent.getX();
-			var agentY = agent.getY();
-			var dx = goal[0] - agentX;
-			var dy = goal[1] - agentY;
+			var agentPosition = agent.getPosition();
+			var dx = goal[0] - agentPosition[0];
+			var dy = goal[1] - agentPosition[1];
 			var length = Math.sqrt(dx * dx + dy * dy);
 			if (length > 1.0) 
 			{
@@ -45,9 +44,10 @@ Main.prototype = {
 		{
 			var agent = this.agentsWithGoals[i][0];
 			var hisGoal = this.agentsWithGoals[i][1];
-
-			var dx = hisGoal[0] - agent.getX();
-			var dy = hisGoal[1] - agent.getY();
+	
+			var agentPosition = agent.getPosition();
+			var dx = hisGoal[0] - agentPosition[0];
+			var dy = hisGoal[1] - agentPosition[1];
 			var length = Math.sqrt(dx * dx + dy * dy);
 			if (length < 1.0)
 			{
@@ -62,9 +62,9 @@ Main.prototype = {
 		var visualScale = 0.3;
 		for (var i = 0, l = this.agentsWithGoals.length; i < l; ++i) 
 		{
-			var agent = this.agentsWithGoals[i][0];
-			var x = agent.getX();
-			var y = agent.getY();
+			var agentPosition = this.agentsWithGoals[i][0].getPosition();
+			var x = agentPosition[0];
+			var y = agentPosition[1];
 			var radius = agent.getRadius();
 			Engine.Painter.drawRect(
 				[visualScale * (x - radius), visualScale * (y - radius)],

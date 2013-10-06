@@ -17,8 +17,7 @@ META_CLASS_END();
 META_CLASS(Firstblood::RvoAgent, Firstblood.RvoAgent);
 	META_METHOD(setMaxSpeed);
 	META_METHOD(setPrefVelocity);
-	META_METHOD(getX);
-	META_METHOD(getY);
+	META_METHOD(getPosition);
 	META_METHOD(getRadius);
 META_CLASS_END();
 

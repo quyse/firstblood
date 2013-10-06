@@ -27,7 +27,5 @@ int main()
 		std::cout << s.str() << '\n';
 	}
 
-	std::string s;
-	std::getline(std::cin, s);
 	return 0;
 }

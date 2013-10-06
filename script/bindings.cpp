@@ -1,4 +1,5 @@
 #include "inanity/script/v8/impl.ipp"
+#include "inanity/inanity-base-meta.ipp"
 #include "inanity/inanity-math-meta.ipp"
 
 #include "script/system.hpp"

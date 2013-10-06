@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <assert.h>
 #include "gamelogic/rvo.hpp"
 #include "rvo/simulator.hpp"
 #include "spatial/interfaces.hpp"
@@ -6,6 +7,21 @@
 namespace Firstblood
 {
 
+	/** Rvo agent **/
+	void RvoAgent::FreeAsNotReferenced() {}
+
+	void RvoAgent::setMaxSpeed(float value)
+	{
+		maxSpeed = value;
+	}
+
+	void RvoAgent::setPrefVelocity(const vec2& velocity)
+	{
+		prefVelocity = velocity;
+	}
+
+
+	/** Rvo simulation **/
 	RvoSimulation::RvoSimulation(size_t maxAgents, Spatial::IIndex2D<ISpatiallyIndexable>* spatialIndex) : _spatialIndex(spatialIndex), RVO::Simulator(maxAgents)
 	{
 		_allocator = new PoolAllocator(sizeof(RvoAgent), maxAgents);
@@ -16,7 +32,7 @@ namespace Firstblood
 		delete _allocator;
 	}
 
-	RvoAgent* RvoSimulation::create(const vec2& position)
+	ptr<RvoAgent> RvoSimulation::create(const vec2& position)
 	{
 		// todo: remove this crap when Inanity::ReferenceCounted will be available
 		void* agentMemory = _allocator->allocMemory(sizeof(RvoAgent));
@@ -26,7 +42,7 @@ namespace Firstblood
 		return agent;
 	}
 
-	void RvoSimulation::destroy(RvoAgent* agent)
+	void RvoSimulation::destroy(ptr<RvoAgent> agent)
 	{
 		removeAgent(agent);
 		_allocator->dealloc(agent);
@@ -35,6 +51,21 @@ namespace Firstblood
 	void RvoSimulation::update(float dt)
 	{
 		doStep(dt, this);
+	}
+
+	void RvoSimulation::setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed)
+	{
+		RVO::Simulator::setAgentDefaults(neighborDist, maxNeighbors, timeHorizon, radius, maxSpeed);
+	}
+
+	size_t RvoSimulation::getMaxAgents()
+	{
+		return RVO::Simulator::getMaxAgents();
+	}
+
+	size_t RvoSimulation::getNumAgents()
+	{
+		return RVO::Simulator::getNumAgents();
 	}
 
 	size_t RvoSimulation::collectSpatialData(ISpatiallyIndexable** list, size_t maxSize)

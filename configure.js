@@ -22,7 +22,6 @@ var staticLibraries = [
 	'libinanity-sqlitefs',
 	'libinanity-compress',
 	'libinanity-base',
-	'libinanity-meta',
 	'libinanity-v8'
 ];
 var staticDepsLibraries = [

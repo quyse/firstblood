@@ -2,6 +2,12 @@
 #define ___FIRSTBLOOD_ENGINE_HPP___
 
 #include "general.hpp"
+#include "spatial/quadtree.hpp"
+#include "spatial/kd_tree.hpp"
+#include "rvo/simulator.hpp"
+#include "gamelogic/common.hpp"
+#include "gamelogic/rvo.hpp"
+#include "script/system.hpp"
 
 class Geometry;
 class GeometryFormats;
@@ -28,6 +34,13 @@ protected:
 	ptr<TextDrawer> textDrawer;
 	ptr<Font> font;
 
+	// spatial index
+	Spatial::IIndex2D<Firstblood::ISpatiallyIndexable>* spatialIndex;
+	// rvo
+	ptr<Firstblood::RvoSimulation> rvoSimulation;
+	// scripts
+	ptr<Firstblood::ScriptSystem> scripts;
+
 	int screenWidth, screenHeight;
 	float cameraAlpha, cameraBeta;
 
@@ -39,6 +52,7 @@ protected:
 
 public:
 	Engine();
+	~Engine();
 
 	void Run();
 	void Tick();

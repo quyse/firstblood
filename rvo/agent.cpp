@@ -2,6 +2,7 @@
 #include "rvo/agent.hpp"
 #include "rvo/simulator.hpp"
 #include "geometry/distance.hpp"
+#include <algorithm>
 
 namespace RVO 
 {

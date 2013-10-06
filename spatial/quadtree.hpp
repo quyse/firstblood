@@ -43,8 +43,8 @@ namespace Spatial
 		Quadtree(size_t depth, float zeroLevelSize, size_t maxMemory) : _depth(depth), _zeroLevelSize(zeroLevelSize)
 		{
 			_arena = new ArenaAllocator(maxMemory);
-			_root = _arena->alloc<QuadtreeNode<T>>();
-			initNode(_root, _zeroLevelSize, 0, 0);
+			this->_root = _arena->alloc<QuadtreeNode<T>>();
+			initNode(this->_root, _zeroLevelSize, 0, 0);
 		}
 
 		virtual ~Quadtree()
@@ -55,8 +55,8 @@ namespace Spatial
 		virtual void purge()
 		{
 			_arena->purge();
-			_root = _arena->alloc<QuadtreeNode<T>>();
-			initNode(_root, _zeroLevelSize, 0, 0);
+			this->_root = _arena->alloc<QuadtreeNode<T>>();
+			initNode(this->_root, _zeroLevelSize, 0, 0);
 		}
 
 		virtual void build(T* objects, size_t objectsCount)
@@ -66,7 +66,7 @@ namespace Spatial
 				T* object = objects + i;
 				float radius = object->getRadius();
 				vec2 position = object->getPosition();
-				addObjectRecursively(object, radius, position, _root, 0);
+				addObjectRecursively(object, radius, position, this->_root, 0);
 			}
 		}
 
@@ -77,14 +77,14 @@ namespace Spatial
 				T* object = *(objects + i);
 				float radius = object->getRadius();
 				vec2 position = object->getPosition();
-				addObjectRecursively(object, radius, position, _root, 0);
+				addObjectRecursively(object, radius, position, this->_root, 0);
 			}
 		}
 
 		// each node's bounding box is shrinked to exactly fit it's content
 		virtual void optimize()
 		{
-			minifyRecursively(_root);
+			minifyRecursively(this->_root);
 		}
 
 	private:
@@ -152,7 +152,7 @@ namespace Spatial
 			EntityList<T>* inhabitant = currentNode->inhabitants;
 			while (inhabitant != nullptr)
 			{
-				vec2& center = inhabitant->getPosition();
+				vec2 center = inhabitant->getPosition();
 				float radius = inhabitant->getRadius();
 				minX = std::min(minX, center.x - radius);
 				minY = std::min(minY, center.y - radius);

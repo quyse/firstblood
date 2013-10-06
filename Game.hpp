@@ -7,10 +7,6 @@
 #include "Engine.hpp"
 #include "spatial/quadtree.hpp"
 #include "spatial/kd_tree.hpp"
-#include "rvo/simulator.hpp"
-#include "gamelogic/common.hpp"
-#include "gamelogic/rvo.hpp"
-#include "script/system.hpp"
 
 struct QuadtreeDebugObject
 {
@@ -38,13 +34,6 @@ protected:
 
 
 protected:
-	// spatial index
-	Spatial::IIndex2D<Firstblood::ISpatiallyIndexable>* spatialIndex;
-	// rvo
-	Firstblood::RvoSimulation* rvoSimulation;
-	// scripts
-	Firstblood::ScriptSystem* scripts;
-
 	// debug crap
 	std::vector<std::pair<Firstblood::RvoAgent*, vec2>> agents;
 	Spatial::Quadtree<QuadtreeDebugObject>* quadtree;

@@ -12,6 +12,11 @@ Engine::Engine() :
 	cameraBeta(-3.1415926535897932f * 0.25f)
 {}
 
+Engine::~Engine()
+{
+	delete spatialIndex;
+}
+
 void Engine::Run()
 {
 	try
@@ -68,6 +73,13 @@ void Engine::Run()
 		font = fontManager->Get("mnogobukov.font");
 
 		boxGeometry = LoadDebugGeometry("box.geo");
+
+		// spatial index
+		spatialIndex = new Spatial::Quadtree<Firstblood::ISpatiallyIndexable>(5, 512.0f, 32 * 1024);
+		// rvo
+		rvoSimulation = NEW(Firstblood::RvoSimulation(256, spatialIndex));
+		// scripts
+		scripts = NEW(Firstblood::ScriptSystem(painter, rvoSimulation));
 
 		try
 		{

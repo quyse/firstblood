@@ -109,6 +109,7 @@ var time = engine.getTime();
 this.Engine = {
 	Painter: engine.getPainter(),
 	Rvo: engine.getRvoSimulation(),
+	Camera: engine.getCamera(),
 	
 	getTime: function() { return time.getTime(); }
 };

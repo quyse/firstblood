@@ -2,11 +2,13 @@
 #define __FB_SCRIPT_SYSTEM__
 
 #include <unordered_set>
+#include "inanity/math/basic.hpp"
 #include "inanity/script/State.hpp"
 #include "inanity/script/Function.hpp"
 #include "inanity/File.hpp"
 #include "script/utils.hpp"
 #include "script/time.hpp"
+#include "script/camera.hpp"
 #include "gamelogic/rvo.hpp"
 #include "Painter.hpp"
 
@@ -16,7 +18,7 @@ namespace Firstblood
 	class ScriptSystem : public Inanity::Object
 	{
 	public:
-		ScriptSystem(Painter* painter, ptr<RvoSimulation>);
+		ScriptSystem(Painter* painter, ptr<RvoSimulation>, mat4x4* cameraViewMatrix);
 		~ScriptSystem();
 		void fini();
 
@@ -29,6 +31,7 @@ namespace Firstblood
 		ptr<ScriptLogger> getLogger();
 		ptr<ScriptPainter> getPainter();
 		ptr<ScriptTime> getTime();
+		ptr<ScriptCamera> getCamera();
 		ptr<RvoSimulation> getRvoSimulation();
 		
 		// primitive analogue of python's import statement
@@ -46,6 +49,7 @@ namespace Firstblood
 		ptr<ScriptLogger> _logger;
 		ptr<ScriptPainter> _painter;
 		ptr<ScriptTime> _time;
+		ptr<ScriptCamera> _camera;
 		ptr<RvoSimulation> _rvoSimulation;
 
 		// processed script files

@@ -1,7 +1,10 @@
 require("math/vec2");
+require("math/vec3");
 
 var Main = function()
 {
+	Engine.Camera.setLookAtLH(vec3.fromValues(0, 0, 100.0), vec3.fromValues(0.000001, 0, -1), vec3.fromValues(0, 1, 1))
+
 	this.agentsWithGoals = [];
 	global.addListener(Event.FRAME, bind(this.update, this));
 	Engine.Rvo.setAgentDefaults(15.0, 8, 15.0, 1.5, 1.0);

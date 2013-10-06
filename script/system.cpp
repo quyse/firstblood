@@ -12,7 +12,7 @@ namespace Firstblood
 
 	ptr<ScriptSystem> ScriptSystem::getInstance() { return _instance; }
 
-	ScriptSystem::ScriptSystem(Painter* painter, ptr<RvoSimulation> rvoSimulation)
+	ScriptSystem::ScriptSystem(Painter* painter, ptr<RvoSimulation> rvoSimulation, mat4x4* cameraViewMatrix)
 	{
 		ptr<Inanity::Script::V8::State> v8State = new Inanity::Script::V8::State();
 		_scriptsVirtualMachine = v8State;
@@ -25,6 +25,8 @@ namespace Firstblood
 		v8State->Register<ScriptPainter>();
 		_time = NEW(ScriptTime());
 		v8State->Register<ScriptTime>();
+		_camera = NEW(ScriptCamera(cameraViewMatrix));
+		v8State->Register<ScriptCamera>();
 		_rvoSimulation = rvoSimulation;
 		v8State->Register<RvoSimulation>();
 
@@ -44,6 +46,7 @@ namespace Firstblood
 		_logger = nullptr;
 		_time->fini();
 		_time = nullptr;
+		_camera = nullptr;
 		_painter = nullptr;
 		_rvoSimulation = nullptr;
 		_scriptsEntryPoint = nullptr;
@@ -63,6 +66,11 @@ namespace Firstblood
 	ptr<ScriptTime> ScriptSystem::getTime()
 	{
 		return _time;
+	}
+
+	ptr<ScriptCamera> ScriptSystem::getCamera()
+	{
+		return _camera;
 	}
 
 	ptr<RvoSimulation> ScriptSystem::getRvoSimulation()

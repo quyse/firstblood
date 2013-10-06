@@ -40,6 +40,8 @@ protected:
 	ptr<Firstblood::RvoSimulation> rvoSimulation;
 	// scripts
 	ptr<Firstblood::ScriptSystem> scripts;
+	// camera matrix
+	mat4x4 cameraViewMatrix;
 
 	int screenWidth, screenHeight;
 	float cameraAlpha, cameraBeta;

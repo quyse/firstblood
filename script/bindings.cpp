@@ -5,7 +5,13 @@
 #include "script/system.hpp"
 #include "script/utils.hpp"
 #include "script/time.hpp"
+#include "script/camera.hpp"
 #include "gamelogic/rvo.hpp"
+
+/* CAMERA */
+META_CLASS(Firstblood::ScriptCamera, Firstblood.Camera);
+	META_METHOD(setLookAtLH);
+META_CLASS_END();
 
 /* TIME */
 META_CLASS(Firstblood::ScriptTime, Firstblood.Time);
@@ -38,6 +44,7 @@ META_CLASS(Firstblood::ScriptSystem, Firstblood.Engine);
 	META_METHOD(getPainter);
 	META_METHOD(getRvoSimulation);
 	META_METHOD(getTime);
+	META_METHOD(getCamera);
 	META_METHOD(require);
 META_CLASS_END();
 

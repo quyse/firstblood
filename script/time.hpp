@@ -1,5 +1,5 @@
-#ifndef __FB_SCRIPT_TIME__
-#define __FB_SCRIPT_TIME__
+#ifndef __FB_SCRIPT_TIME_HPP__
+#define __FB_SCRIPT_TIME_HPP__
 
 #include <vector>
 #include "inanity/ptr.hpp"

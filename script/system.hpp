@@ -6,6 +6,7 @@
 #include "inanity/script/Function.hpp"
 #include "inanity/File.hpp"
 #include "script/utils.hpp"
+#include "script/time.hpp"
 #include "gamelogic/rvo.hpp"
 #include "Painter.hpp"
 
@@ -27,6 +28,7 @@ namespace Firstblood
 		// script getters
 		ptr<ScriptLogger> getLogger();
 		ptr<ScriptPainter> getPainter();
+		ptr<ScriptTime> getTime();
 		ptr<RvoSimulation> getRvoSimulation();
 		
 		// primitive analogue of python's import statement
@@ -43,6 +45,7 @@ namespace Firstblood
 		// global js objects
 		ptr<ScriptLogger> _logger;
 		ptr<ScriptPainter> _painter;
+		ptr<ScriptTime> _time;
 		ptr<RvoSimulation> _rvoSimulation;
 
 		// processed script files

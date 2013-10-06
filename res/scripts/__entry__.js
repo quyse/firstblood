@@ -41,7 +41,13 @@ if (!this.initialized)
 	this.initialized = true;
 	require("main");
 	var main = new Main();
+	this.prevTime = Engine.getTime();
 }
 
-// todo: retrieve frame time and mouse/keyboard events from the engine
-this.dispatch(new Event.FrameEvent(0));
+// todo: dispatch MOUSE and KEY events
+
+// dispatch FRAME event
+var timeNow = Engine.getTime();
+var dt = timeNow - prevTime;
+this.prevTime = timeNow;
+this.dispatch(new Event.FrameEvent(dt));

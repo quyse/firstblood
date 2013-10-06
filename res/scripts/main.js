@@ -4,7 +4,7 @@ var Main = function()
 {
 	this.agentsWithGoals = [];
 	global.addListener(Event.FRAME, bind(this.update, this));
-	Engine.Rvo.setAgentDefaults(15.0, 8, 15.0, 1.5, 1.5);
+	Engine.Rvo.setAgentDefaults(15.0, 8, 15.0, 1.5, 1.0);
 };
 
 Main.prototype = {

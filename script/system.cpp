@@ -1,5 +1,4 @@
 #include "inanity/FolderFileSystem.hpp"
-#include "inanity/script/v8/State.hpp"
 #include "inanity/script/Any.hpp"
 #include "script/system.hpp"
 
@@ -24,6 +23,8 @@ namespace Firstblood
 		v8State->Register<ScriptLogger>();
 		_painter = NEW(ScriptPainter(painter));
 		v8State->Register<ScriptPainter>();
+		_time = NEW(ScriptTime());
+		v8State->Register<ScriptTime>();
 		_rvoSimulation = rvoSimulation;
 		v8State->Register<RvoSimulation>();
 
@@ -40,9 +41,13 @@ namespace Firstblood
 
 	ScriptSystem::~ScriptSystem()
 	{
+		_logger = nullptr;
+		_time->fini();
+		_time = nullptr;
+		_painter = nullptr;
+		_rvoSimulation = nullptr;
 		_scriptsEntryPoint = nullptr;
 		_scriptsVirtualMachine = nullptr;
-		_logger = nullptr;
 	}
 
 	ptr<ScriptLogger> ScriptSystem::getLogger()
@@ -53,6 +58,11 @@ namespace Firstblood
 	ptr<ScriptPainter> ScriptSystem::getPainter()
 	{
 		return _painter;
+	}
+
+	ptr<ScriptTime> ScriptSystem::getTime()
+	{
+		return _time;
 	}
 
 	ptr<RvoSimulation> ScriptSystem::getRvoSimulation()
@@ -73,6 +83,7 @@ namespace Firstblood
 
 	void ScriptSystem::update(float dt)
 	{
+		_time->update();
 		_scriptsEntryPoint->Run();
 	}
 

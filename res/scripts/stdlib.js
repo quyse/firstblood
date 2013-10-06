@@ -104,8 +104,16 @@ EventDispatcher.prototype = {
 
 /** Engine-provided subsystems and utilities **/
 var engine = Firstblood.Engine.getInstance();
+var time = engine.getTime();
 
 this.Engine = {
 	Painter: engine.getPainter(),
-	Rvo: engine.getRvoSimulation()
+	Rvo: engine.getRvoSimulation(),
+	
+	getTime: function() { return time.getTime(); }
 };
+
+this.setTimeout = function(closure, timeSpan) { return time.createTimer(closure, timeSpan, true); };
+this.setInterval = function(closure, timeSpan) { return time.createTimer(closure, timeSpan, false); };
+this.clearTimer = function(timerId) { time.destroyTimer(timerId); };
+this.clearInterval = function(timerId) { time.destroyTimer(timerId); };

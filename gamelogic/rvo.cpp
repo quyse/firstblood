@@ -40,7 +40,6 @@ namespace Firstblood
 
 	ptr<RvoAgent> RvoSimulation::create(const vec2& position)
 	{
-		// todo: remove this crap when Inanity::ReferenceCounted will be available
 		void* agentMemory = _allocator->allocMemory(sizeof(RvoAgent));
 		RvoAgent* agent = new (agentMemory) RvoAgent;
 		agent->position = position;

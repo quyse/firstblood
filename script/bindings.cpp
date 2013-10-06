@@ -4,7 +4,15 @@
 
 #include "script/system.hpp"
 #include "script/utils.hpp"
+#include "script/time.hpp"
 #include "gamelogic/rvo.hpp"
+
+/* TIME */
+META_CLASS(Firstblood::ScriptTime, Firstblood.Time);
+	META_METHOD(getTime);
+	META_METHOD(createTimer);
+	META_METHOD(destroyTimer);
+META_CLASS_END();
 
 /* RVO */
 META_CLASS(Firstblood::RvoSimulation, Firstblood.RvoSimulation);
@@ -29,6 +37,7 @@ META_CLASS(Firstblood::ScriptSystem, Firstblood.Engine);
 	META_METHOD(getLogger);
 	META_METHOD(getPainter);
 	META_METHOD(getRvoSimulation);
+	META_METHOD(getTime);
 	META_METHOD(require);
 META_CLASS_END();
 

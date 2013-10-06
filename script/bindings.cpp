@@ -31,6 +31,7 @@ META_CLASS(Firstblood::ScriptSystem, Firstblood.Engine);
 	META_METHOD(getLogger);
 	META_METHOD(getPainter);
 	META_METHOD(getRvoSimulation);
+	META_METHOD(require);
 META_CLASS_END();
 
 META_CLASS(Firstblood::ScriptLogger, Firstblood.Logger);

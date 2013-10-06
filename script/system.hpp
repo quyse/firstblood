@@ -1,6 +1,7 @@
 #ifndef __FB_SCRIPT_SYSTEM__
 #define __FB_SCRIPT_SYSTEM__
 
+#include <unordered_set>
 #include "inanity/script/v8/State.hpp"
 #include "inanity/script/v8/Function.hpp"
 #include "inanity/File.hpp"
@@ -25,7 +26,10 @@ namespace Firstblood
 		ptr<ScriptLogger> getLogger();
 		ptr<ScriptPainter> getPainter();
 		ptr<RvoSimulation> getRvoSimulation();
-
+		
+		// primitive analogue of python's import statement
+		void require(const Inanity::String& file);
+		
 	public:
 		static ScriptSystem* _instance;
 
@@ -38,6 +42,9 @@ namespace Firstblood
 		ptr<ScriptLogger> _logger;
 		ptr<ScriptPainter> _painter;
 		ptr<RvoSimulation> _rvoSimulation;
+
+		// processed script files
+		std::unordered_set<Inanity::String> _processedScriptSources;
 	};
 
 }

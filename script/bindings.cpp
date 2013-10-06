@@ -1,7 +1,4 @@
-#include "inanity/script/v8/State.hpp"
-#include "inanity/script/Function.hpp"
 #include "inanity/script/v8/impl.ipp"
-#include "inanity/meta/impl.hpp"
 #include "inanity/inanity-math-meta.ipp"
 
 #include "script/system.hpp"

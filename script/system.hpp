@@ -17,6 +17,7 @@ namespace Firstblood
 	public:
 		ScriptSystem(Painter* painter, ptr<RvoSimulation>);
 		~ScriptSystem();
+		void fini();
 
 		static ptr<ScriptSystem> getInstance();
 

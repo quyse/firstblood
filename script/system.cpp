@@ -1,6 +1,5 @@
 #include "inanity/FolderFileSystem.hpp"
 #include "script/system.hpp"
-#include "script/math.hpp"
 
 #define SCRIPTS_FOLDER "res/scripts/"
 #define SCRIPTS_ENTRY_FILE "res/scripts/__entry__.js"
@@ -18,9 +17,9 @@ namespace Firstblood
 		_scriptsEntryPoint = _scriptsVirtualMachine->LoadScript(FolderFileSystem::GetNativeFileSystem()->LoadFile(SCRIPTS_ENTRY_FILE));
 		
 		// register global game objects
-		_logger = new ScriptLogger();
+		_logger = NEW(ScriptLogger());
 		_scriptsVirtualMachine->Register<ScriptLogger>();
-		_painter = new ScriptPainter(painter);
+		_painter = NEW(ScriptPainter(painter));
 		_scriptsVirtualMachine->Register<ScriptPainter>();
 		_rvoSimulation = rvoSimulation;
 		_scriptsVirtualMachine->Register<RvoSimulation>();
@@ -29,6 +28,11 @@ namespace Firstblood
 		assert(_instance == nullptr);
 		_instance = this;
 		_scriptsVirtualMachine->Register<ScriptSystem>();
+	}
+
+	void ScriptSystem::fini()
+	{
+		_scriptsVirtualMachine->ReclaimInstance(this);
 	}
 
 	ScriptSystem::~ScriptSystem()

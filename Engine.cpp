@@ -75,7 +75,7 @@ void Engine::Run()
 		boxGeometry = LoadDebugGeometry("box.geo");
 
 		// spatial index
-		spatialIndex = new Spatial::Quadtree<Firstblood::ISpatiallyIndexable>(5, 512.0f, 32 * 1024);
+		spatialIndex = NEW(Spatial::Quadtree<Firstblood::ISpatiallyIndexable>(5, 512.0f, 32 * 1024));
 		// rvo
 		rvoSimulation = NEW(Firstblood::RvoSimulation(256, spatialIndex));
 		// scripts
@@ -89,6 +89,8 @@ void Engine::Run()
 		{
 			THROW_SECONDARY("Error while running game", exception);
 		}
+		
+		scripts->fini();
 	}
 	catch(Exception* exception)
 	{

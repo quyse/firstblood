@@ -5,7 +5,6 @@
 #include "inanity/String.hpp"
 #include "inanity/ptr.hpp"
 #include "Painter.hpp"
-#include "script/math.hpp"
 
 using namespace Inanity;
 
@@ -15,14 +14,7 @@ namespace Firstblood
 	class ScriptLogger : public Inanity::Object
 	{
 	public:
-		static ptr<ScriptLogger> getInstance();
-		
-		ScriptLogger();
-
 		void write(const Inanity::String& message);
-
-	private:
-		static ScriptLogger* _instance;
 
 	META_DECLARE_CLASS(ScriptLogger);
 	};
@@ -31,8 +23,6 @@ namespace Firstblood
 	class ScriptPainter : public Inanity::Object
 	{
 	public:
-		static ptr<ScriptPainter> getInstance();
-
 		ScriptPainter(ptr<Painter> painter);
 		~ScriptPainter();
 
@@ -44,7 +34,6 @@ namespace Firstblood
 		vec3 colorToVec3(uint color);
 
 	private:
-		static ScriptPainter* _instance;
 		ptr<Painter> _painter;
 
 	META_DECLARE_CLASS(ScriptPainter);

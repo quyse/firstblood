@@ -2,8 +2,8 @@
 #define __FB_SCRIPT_SYSTEM__
 
 #include <unordered_set>
-#include "inanity/script/v8/State.hpp"
-#include "inanity/script/v8/Function.hpp"
+#include "inanity/script/State.hpp"
+#include "inanity/script/Function.hpp"
 #include "inanity/File.hpp"
 #include "script/utils.hpp"
 #include "gamelogic/rvo.hpp"
@@ -37,7 +37,7 @@ namespace Firstblood
 
 	private:
 		// virtual machine
-		ptr<Inanity::Script::V8::State> _scriptsVirtualMachine;
+		ptr<Inanity::Script::State> _scriptsVirtualMachine;
 		ptr<Inanity::Script::Function> _scriptsEntryPoint;
 
 		// global js objects

@@ -1,4 +1,6 @@
 #include "inanity/FolderFileSystem.hpp"
+#include "inanity/script/v8/State.hpp"
+#include "inanity/script/Any.hpp"
 #include "script/system.hpp"
 
 #define SCRIPTS_FOLDER "res/scripts/"
@@ -13,21 +15,22 @@ namespace Firstblood
 
 	ScriptSystem::ScriptSystem(Painter* painter, ptr<RvoSimulation> rvoSimulation)
 	{
-		_scriptsVirtualMachine = new Inanity::Script::V8::State();
+		ptr<Inanity::Script::V8::State> v8State = new Inanity::Script::V8::State();
+		_scriptsVirtualMachine = v8State;
 		_scriptsEntryPoint = _scriptsVirtualMachine->LoadScript(FolderFileSystem::GetNativeFileSystem()->LoadFile(SCRIPTS_ENTRY_FILE));
 		
 		// register global game objects
 		_logger = NEW(ScriptLogger());
-		_scriptsVirtualMachine->Register<ScriptLogger>();
+		v8State->Register<ScriptLogger>();
 		_painter = NEW(ScriptPainter(painter));
-		_scriptsVirtualMachine->Register<ScriptPainter>();
+		v8State->Register<ScriptPainter>();
 		_rvoSimulation = rvoSimulation;
-		_scriptsVirtualMachine->Register<RvoSimulation>();
+		v8State->Register<RvoSimulation>();
 
 		// register self for script access
 		assert(_instance == nullptr);
 		_instance = this;
-		_scriptsVirtualMachine->Register<ScriptSystem>();
+		v8State->Register<ScriptSystem>();
 	}
 
 	void ScriptSystem::fini()

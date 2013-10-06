@@ -22,6 +22,7 @@ namespace Firstblood
 		static ptr<ScriptSystem> getInstance();
 
 		void update(float dt);
+		void removeFromScript(Inanity::RefCounted* object);
 
 		// script getters
 		ptr<ScriptLogger> getLogger();

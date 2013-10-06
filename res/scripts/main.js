@@ -1,8 +1,10 @@
+require("math/vec2");
+
 var Main = function()
 {
 	this.agentsWithGoals = [];
 	global.addListener(Event.FRAME, bind(this.update, this));
-	Engine.Rvo.setAgentDefaults(15.0, 8, 15.0, 1.5, 2.0);
+	Engine.Rvo.setAgentDefaults(15.0, 8, 15.0, 1.5, 1.5);
 };
 
 Main.prototype = {
@@ -18,38 +20,25 @@ Main.prototype = {
 			var agentWithGoal = this.agentsWithGoals[i];
 			var agent = agentWithGoal[0];
 			var goal = agentWithGoal[1];
-			
-			var agentPosition = agent.getPosition();
-			var dx = goal[0] - agentPosition[0];
-			var dy = goal[1] - agentPosition[1];
-			var length = Math.sqrt(dx * dx + dy * dy);
-			if (length > 1.0) 
-			{
-				dx /= length;
-				dy /= length;
-			}
-			agent.setPrefVelocity([dx, dy]);
+			var toGoal = vec2.sub(goal, agent.getPosition());
+			agent.setPrefVelocity(vec2.scale(vec2.normalize(toGoal), agent.getMaxSpeed()));
 		}
 
 		if (Engine.Rvo.getMaxAgents() > Engine.Rvo.getNumAgents())
 		{
 			var x = badRandom(0.0, 1.0) < 0.5 ? -25.0 : 25.0
 			var y = badRandom(-100.0, 100.0)
-			var agent = Engine.Rvo.create([x, y]);
-			agent.setMaxSpeed(2.0);
-			this.agentsWithGoals.push([agent, [-x, -y]])
+			var agent = Engine.Rvo.create(vec2.fromValues(x, y));
+			this.agentsWithGoals.push([agent, vec2.fromValues(-x, -y)])
 		}
 		
 		for (var i = 0, l = this.agentsWithGoals.length; i < l; ++i) 
 		{
 			var agent = this.agentsWithGoals[i][0];
 			var hisGoal = this.agentsWithGoals[i][1];
-	
 			var agentPosition = agent.getPosition();
-			var dx = hisGoal[0] - agentPosition[0];
-			var dy = hisGoal[1] - agentPosition[1];
-			var length = Math.sqrt(dx * dx + dy * dy);
-			if (length < 1.0)
+			var toGoal = vec2.sub(hisGoal, agentPosition);
+			if (vec2.len(toGoal) < 1.0)
 			{
 				Engine.Rvo.destroy(agent);
 				this.agentsWithGoals[i] = this.agentsWithGoals[l - 1];
@@ -62,7 +51,8 @@ Main.prototype = {
 		var visualScale = 0.3;
 		for (var i = 0, l = this.agentsWithGoals.length; i < l; ++i) 
 		{
-			var agentPosition = this.agentsWithGoals[i][0].getPosition();
+			var agent = this.agentsWithGoals[i][0];
+			var agentPosition = agent.getPosition();
 			var x = agentPosition[0];
 			var y = agentPosition[1];
 			var radius = agent.getRadius();

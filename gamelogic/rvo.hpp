@@ -1,6 +1,7 @@
 #ifndef __FB_GAMELOGIC_RVO_HPP__
 #define __FB_GAMELOGIC_RVO_HPP__
 
+#include "inanity/script/v8/State.hpp"
 #include "inanity/meta/decl.hpp"
 #include "inanity/ptr.hpp"
 #include "gamelogic/common.hpp"
@@ -27,6 +28,7 @@ namespace Firstblood
 		virtual uint32_t getMask() { return mask; };
 		virtual vec2 getVelocity() { return velocity_; };
 
+		float getMaxSpeed();
 		void setMaxSpeed(float value);
 		void setPrefVelocity(const vec2& velocity);
 

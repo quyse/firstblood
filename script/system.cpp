@@ -73,4 +73,9 @@ namespace Firstblood
 		_scriptsEntryPoint->Run();
 	}
 
+	void ScriptSystem::removeFromScript(Inanity::RefCounted* object)
+	{
+		_scriptsVirtualMachine->ReclaimInstance(object);
+	}
+
 }

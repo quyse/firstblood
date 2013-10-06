@@ -3,12 +3,18 @@
 #include "gamelogic/rvo.hpp"
 #include "rvo/simulator.hpp"
 #include "spatial/interfaces.hpp"
+#include "script/system.hpp"
 
 namespace Firstblood
 {
 
 	/** Rvo agent **/
 	void RvoAgent::FreeAsNotReferenced() {}
+
+	float RvoAgent::getMaxSpeed()
+	{
+		return maxSpeed;
+	}
 
 	void RvoAgent::setMaxSpeed(float value)
 	{
@@ -44,6 +50,7 @@ namespace Firstblood
 
 	void RvoSimulation::destroy(ptr<RvoAgent> agent)
 	{
+		ScriptSystem::getInstance()->removeFromScript(agent);
 		removeAgent(agent);
 		_allocator->dealloc(agent);
 	}

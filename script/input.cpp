@@ -49,8 +49,26 @@ namespace Firstblood
 		}
 		else
 		{
-			// todo: fill this gap with something meaningful
-			eventDetails = system->createScriptArray(0);
+			eventDetails = system->createScriptArray(3);
+			bool isMouseMove = event.mouse.type == Inanity::Input::Event::Mouse::typeMove;
+			eventDetails->Set(0, system->createScriptBoolean(isMouseMove));
+			if (isMouseMove)
+			{
+				ptr<Inanity::Script::Any> offset = system->createScriptArray(3);
+				offset->Set(0, system->createScriptFloat(event.mouse.offsetX));
+				offset->Set(1, system->createScriptFloat(event.mouse.offsetY));
+				offset->Set(2, system->createScriptFloat(event.mouse.offsetZ));
+				eventDetails->Set(1, offset);
+			}
+			else
+			{
+				ptr<Inanity::Script::Any> mouseDetails = system->createScriptArray(2);
+				// isDown
+				mouseDetails->Set(0, system->createScriptBoolean(event.mouse.type == Inanity::Input::Event::Mouse::typeButtonDown));
+				// button
+				mouseDetails->Set(1, system->createScriptInteger(event.mouse.button));
+				eventDetails->Set(1, mouseDetails);
+			}
 		}
 		scriptEvent->Set(1, eventDetails);
 
@@ -90,11 +108,6 @@ namespace Firstblood
 	bool ScriptInput::isKeyDown(uint keyCode)
 	{
 		return _charsDown.find(keyCode) != _charsDown.end();
-	}
-
-	bool ScriptInput::isMouseKeyDown(uint keyCode)
-	{
-		return keyCode < 3 ? _state->mouseButtons[keyCode] : false;
 	}
 
 	vec2 ScriptInput::getCursorPosition()

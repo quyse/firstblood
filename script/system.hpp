@@ -33,6 +33,7 @@ namespace Firstblood
 		void removeFromScript(Inanity::RefCounted* object);
 		ptr<Inanity::Script::Any> createScriptArray(size_t size);
 		ptr<Inanity::Script::Any> createScriptInteger(long integer);
+		ptr<Inanity::Script::Any> createScriptFloat(float number);
 		ptr<Inanity::Script::Any> createScriptBoolean(bool boolean);
 
 		// script getters

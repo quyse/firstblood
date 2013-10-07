@@ -14,7 +14,6 @@ META_CLASS(Firstblood::ScriptInput, Firstblood.Input)
 	META_METHOD(addListener);
 	META_METHOD(removeListener);
 	META_METHOD(isKeyDown);
-	META_METHOD(isMouseKeyDown);
 	META_METHOD(getCursorPosition);
 META_CLASS_END();
 

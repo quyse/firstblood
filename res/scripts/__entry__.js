@@ -37,19 +37,32 @@ if (!this.initialized)
 	// setup MOUSE and KEY events dispatching
 	var inputHandler = function(event)
 	{
+		var jsEvent;
 		var isMouseEvent = event[0];
+		var details = event[1];
 		if (isMouseEvent)
 		{
-			return 0;
+			var isMouseMove = details[0];
+			if (isMouseMove)
+			{
+				var move = details[1];
+				jsEvent = new Event.MouseMoveEvent(move[0], move[1]);
+			}
+			else
+			{
+				var isDown = details[1][0];
+				var button = details[1][1];
+				jsEvent = new Event.MouseButtonEvent(button, isDown);
+			}
 		}
 		else
 		{
-			var details = event[1];
 			var isDown = details[0];
 			var keyCode = details[1];
-			var result = global.dispatch(new Event.KeyEvent(keyCode, isDown));
-			return result ? 1 : 0;
+			jsEvent = new Event.KeyboardEvent(keyCode, isDown);
 		}
+		var result = global.dispatch(jsEvent);
+		return result ? 1 : 0;
 	};
 	Engine.Input.addListener(inputHandler);
 	

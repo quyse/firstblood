@@ -8,6 +8,8 @@ var Main = function()
 	this.agentsWithGoals = [];
 	global.addListener(Event.FRAME, bind(this.update, this));
 	global.addListener(Event.KEYBOARD, bind(this.handleKeyEvent, this));
+	global.addListener(Event.MOUSE_MOVE, bind(this.handleMouseMoveEvent, this));
+	global.addListener(Event.MOUSE_BUTTON, bind(this.handleMouseButtonEvent, this));
 	Engine.Rvo.setAgentDefaults(15.0, 8, 15.0, 1.5, 1.0);
 };
 
@@ -16,6 +18,18 @@ Main.prototype = {
 	{
 		if (event.isUp && event.key == 13)
 			log("Stop pressing enter, moron!");
+	},
+	
+	handleMouseMoveEvent: function(event)
+	{
+		if (Engine.Input.isKeyDown(13) == true)
+			log("Mr Jerry's coords are: ", Engine.Input.getCursorPosition(), ", he's running from Tom with speed: ", event.dx, event.dy);
+	},
+	
+	handleMouseButtonEvent: function(event)
+	{
+		if (event.isLeftButton && event.isDown)
+			log("Hey, easy, man, easy!");
 	},
 
 	update: function(event)

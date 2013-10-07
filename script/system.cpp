@@ -130,6 +130,11 @@ namespace Firstblood
 		return _scriptsVirtualMachine->NewInteger(integer);
 	}
 
+	ptr<Inanity::Script::Any> ScriptSystem::createScriptFloat(float number)
+	{
+		return _scriptsVirtualMachine->NewNumber(number);
+	}
+
 	ptr<Inanity::Script::Any> ScriptSystem::createScriptBoolean(bool boolean)
 	{
 		return _scriptsVirtualMachine->NewBoolean(boolean);

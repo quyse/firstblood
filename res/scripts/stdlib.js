@@ -10,14 +10,30 @@ var FrameEvent = function(dt)
 	this.type = Event.FRAME;
 };
 
-var MouseEvent = function(x, y)
+var MouseMoveEvent = function(dx, dy)
 {
-	this.x = x;
-	this.y = y;
-	this.type = Event.MOUSE;
+	this.dx = dx;
+	this.dy = dy;
+	this.type = Event.MOUSE_MOVE;
 };
 
-var KeyEvent = function(keyCode, isDown)
+var MouseWheelEvent = function(dz)
+{
+	this.dz = dz;
+	this.type = Event.MOUSE_WHEEL;
+};
+
+var MouseButtonEvent = function(button, isDown)
+{
+	this.isLeftButton = button == 0;
+	this.isRightButtpn = button == 1;
+	this.isMiddleButton = button == 2;
+	this.isDown = isDown;
+	this.isUp = !isDown;
+	this.type = Event.MOUSE_BUTTON;
+};
+
+var KeyboardEvent = function(keyCode, isDown)
 {
 	this.key = keyCode;
 	this.isDown = isDown;
@@ -28,15 +44,19 @@ var KeyEvent = function(keyCode, isDown)
 this.Event = {
 	// ids
 	FRAME: "event_frame",
-	MOUSE: "event_mouse",
+	MOUSE_MOVE: "event_mouse_move",
+	MOUSE_BUTTON: "event_mouse_button",
+	MOUSE_WHEEL: "event_mouse_wheel",
 	KEYBOARD: "event_key",
 	APP_LOSE_FOCUS: "lose_focus",
 	APP_GAIN_FOCUS: "gain_focus",
 	
 	// objects
 	FrameEvent: FrameEvent,
-	MouseEvent: MouseEvent,
-	KeyEvent: KeyEvent
+	MouseMoveEvent: MouseMoveEvent,
+	MouseWheelEvent: MouseWheelEvent,
+	MouseButtonEvent: MouseButtonEvent,
+	KeyboardEvent: KeyboardEvent
 };
 
 

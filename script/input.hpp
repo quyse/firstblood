@@ -24,7 +24,6 @@ namespace Firstblood
 		void setState(const Inanity::Input::State* state);
 		void update();
 		bool isKeyDown(uint keyCode);
-		bool isMouseKeyDown(uint keyCode);
 		vec2 getCursorPosition();
 
 		void addListener(ptr<Inanity::Script::Any> closure);

@@ -6,7 +6,17 @@
 #include "script/utils.hpp"
 #include "script/time.hpp"
 #include "script/camera.hpp"
+#include "script/input.hpp"
 #include "gamelogic/rvo.hpp"
+
+/* INPUT */
+META_CLASS(Firstblood::ScriptInput, Firstblood.Input)
+	META_METHOD(addListener);
+	META_METHOD(removeListener);
+	META_METHOD(isKeyDown);
+	META_METHOD(isMouseKeyDown);
+	META_METHOD(getCursorPosition);
+META_CLASS_END();
 
 /* CAMERA */
 META_CLASS(Firstblood::ScriptCamera, Firstblood.Camera);
@@ -45,6 +55,7 @@ META_CLASS(Firstblood::ScriptSystem, Firstblood.Engine);
 	META_METHOD(getRvoSimulation);
 	META_METHOD(getTime);
 	META_METHOD(getCamera);
+	META_METHOD(getInput);
 	META_METHOD(require);
 META_CLASS_END();
 

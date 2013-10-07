@@ -103,10 +103,13 @@ void Engine::Tick()
 	float frameTime = ticker.Tick();
 
 	ptr<Input::Frame> inputFrame = inputManager->GetCurrentFrame();
+	const Input::State& inputState = inputFrame->GetCurrentState();
 	while(inputFrame->NextEvent())
 	{
 		const Input::Event& inputEvent = inputFrame->GetCurrentEvent();
-
+		scripts->setInputState(&inputState);
+		if (scripts->handleInputEvent(inputEvent))
+			continue;
 		//std::cout << inputEvent;
 
 		switch(inputEvent.device)
@@ -147,7 +150,6 @@ void Engine::Tick()
 	vec3 cameraRightDirection = normalize(cross(cameraDirection, vec3(0, 0, 1)));
 	vec3 cameraUpDirection = cross(cameraRightDirection, cameraDirection);
 
-	const Input::State& inputState = inputFrame->GetCurrentState();
 	/*
 	left up right down Q E
 	37 38 39 40

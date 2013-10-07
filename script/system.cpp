@@ -27,6 +27,8 @@ namespace Firstblood
 		v8State->Register<ScriptTime>();
 		_camera = NEW(ScriptCamera(cameraViewMatrix));
 		v8State->Register<ScriptCamera>();
+		_input = NEW(ScriptInput());
+		v8State->Register<ScriptInput>();
 		_rvoSimulation = rvoSimulation;
 		v8State->Register<RvoSimulation>();
 
@@ -36,21 +38,23 @@ namespace Firstblood
 		v8State->Register<ScriptSystem>();
 	}
 
-	void ScriptSystem::fini()
-	{
-		_scriptsVirtualMachine->ReclaimInstance(this);
-	}
-
 	ScriptSystem::~ScriptSystem()
 	{
 		_logger = nullptr;
 		_time->fini();
 		_time = nullptr;
+		_input->fini();
+		_input = nullptr;
 		_camera = nullptr;
 		_painter = nullptr;
 		_rvoSimulation = nullptr;
 		_scriptsEntryPoint = nullptr;
 		_scriptsVirtualMachine = nullptr;
+	}
+
+	void ScriptSystem::fini()
+	{
+		_scriptsVirtualMachine->ReclaimInstance(this);
 	}
 
 	ptr<ScriptLogger> ScriptSystem::getLogger()
@@ -73,6 +77,11 @@ namespace Firstblood
 		return _camera;
 	}
 
+	ptr<ScriptInput> ScriptSystem::getInput()
+	{
+		return _input;
+	}
+
 	ptr<RvoSimulation> ScriptSystem::getRvoSimulation()
 	{
 		return _rvoSimulation;
@@ -93,11 +102,27 @@ namespace Firstblood
 	{
 		_time->update();
 		_scriptsEntryPoint->Run();
+		_input->update();
+	}
+
+	bool ScriptSystem::handleInputEvent(const Inanity::Input::Event& event)
+	{
+		return _input->handleEvent(event);
+	}
+
+	void ScriptSystem::setInputState(const Inanity::Input::State* state)
+	{
+		_input->setState(state);
 	}
 
 	void ScriptSystem::removeFromScript(Inanity::RefCounted* object)
 	{
 		_scriptsVirtualMachine->ReclaimInstance(object);
+	}
+
+	ptr<Inanity::Script::Any> ScriptSystem::createScriptArray(size_t size)
+	{
+		return _scriptsVirtualMachine->NewArray(size);
 	}
 
 }

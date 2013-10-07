@@ -2,6 +2,7 @@
 #define __FB_SCRIPT_INPUT_HPP__
 
 #include <vector>
+#include <unordered_set>
 #include "inanity/ptr.hpp"
 #include "inanity/math/basic.hpp"
 #include "inanity/meta/decl.hpp"
@@ -33,6 +34,7 @@ namespace Firstblood
 		// second element of the pair is "dead" mark
 		std::vector<std::pair<Inanity::Script::Any*, bool>> _listeners;
 		const Inanity::Input::State* _state;
+		std::unordered_set<uint> _charsDown;
 
 	META_DECLARE_CLASS(ScriptInput);
 	};

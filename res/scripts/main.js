@@ -7,10 +7,17 @@ var Main = function()
 
 	this.agentsWithGoals = [];
 	global.addListener(Event.FRAME, bind(this.update, this));
+	global.addListener(Event.KEYBOARD, bind(this.handleKeyEvent, this));
 	Engine.Rvo.setAgentDefaults(15.0, 8, 15.0, 1.5, 1.0);
 };
 
 Main.prototype = {
+	handleKeyEvent: function(event)
+	{
+		if (event.isUp && event.key == 13)
+			log("Stop pressing enter, moron!");
+	},
+
 	update: function(event)
 	{
 		function badRandom(a, b)

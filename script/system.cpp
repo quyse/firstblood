@@ -125,4 +125,14 @@ namespace Firstblood
 		return _scriptsVirtualMachine->NewArray(size);
 	}
 
+	ptr<Inanity::Script::Any> ScriptSystem::createScriptInteger(long integer)
+	{
+		return _scriptsVirtualMachine->NewInteger(integer);
+	}
+
+	ptr<Inanity::Script::Any> ScriptSystem::createScriptBoolean(bool boolean)
+	{
+		return _scriptsVirtualMachine->NewBoolean(boolean);
+	}
+
 }

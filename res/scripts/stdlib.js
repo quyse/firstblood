@@ -17,21 +17,19 @@ var MouseEvent = function(x, y)
 	this.type = Event.MOUSE;
 };
 
-var KeyEvent = function(keyCode, isDown, isCtrlDown, isShiftDown)
+var KeyEvent = function(keyCode, isDown)
 {
-	this.keyCode = keyCode;
+	this.key = keyCode;
 	this.isDown = isDown;
 	this.isUp = !isDown;
-	this.isCtrlDown = isCtrlDown;
-	this.isShiftDown = isShiftDown;
-	this.type = Event.KEY;
+	this.type = Event.KEYBOARD;
 };
 
 this.Event = {
 	// ids
 	FRAME: "event_frame",
 	MOUSE: "event_mouse",
-	KEY: "event_key",
+	KEYBOARD: "event_key",
 	APP_LOSE_FOCUS: "lose_focus",
 	APP_GAIN_FOCUS: "gain_focus",
 	
@@ -62,13 +60,18 @@ EventDispatcher.prototype = {
 	
 	dispatch: function(event)
 	{
+		var result = false;
 		var eventType = event.type;
 		if (eventType in this.mapEventToSubscribersList)
 		{
 			var subscribers = this.mapEventToSubscribersList[eventType];
 			for (var i = 0, l = subscribers.length; i < l; ++i)
-				subscribers[i](event);
+			{
+				var handled = subscribers[i](event);
+				result = result || handled;
+			}
 		}
+		return result;
 	},
 	
 	addListener: function(eventType, listener)
@@ -110,6 +113,7 @@ this.Engine = {
 	Painter: engine.getPainter(),
 	Rvo: engine.getRvoSimulation(),
 	Camera: engine.getCamera(),
+	Input: engine.getInput(),
 	
 	getTime: function() { return time.getTime(); }
 };

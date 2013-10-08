@@ -57,9 +57,9 @@ void Engine::Run()
 
 		fileSystem =
 #ifdef PRODUCTION
-			NEW(BlobFileSystem(FolderFileSystem::GetNativeFileSystem()->LoadFile("data")))
+			NEW(BlobFileSystem(Platform::FileSystem::GetNativeFileSystem()->LoadFile("data")))
 #else
-			NEW(BufferedFileSystem(NEW(FolderFileSystem("res"))))
+			NEW(BufferedFileSystem(NEW(Platform::FileSystem("res"))))
 #endif
 		;
 

@@ -1,4 +1,4 @@
-#include "inanity/FolderFileSystem.hpp"
+#include "inanity/platform/FileSystem.hpp"
 #include "inanity/script/Any.hpp"
 #include "script/system.hpp"
 
@@ -16,7 +16,7 @@ namespace Firstblood
 	{
 		ptr<Inanity::Script::V8::State> v8State = new Inanity::Script::V8::State();
 		_scriptsVirtualMachine = v8State;
-		_scriptsEntryPoint = _scriptsVirtualMachine->LoadScript(FolderFileSystem::GetNativeFileSystem()->LoadFile(SCRIPTS_ENTRY_FILE));
+		_scriptsEntryPoint = _scriptsVirtualMachine->LoadScript(Platform::FileSystem::GetNativeFileSystem()->LoadFile(SCRIPTS_ENTRY_FILE));
 		
 		// register global game objects
 		_logger = NEW(ScriptLogger());
@@ -92,7 +92,7 @@ namespace Firstblood
 		if (_processedScriptSources.find(fileName) == _processedScriptSources.end())
 		{
 			Inanity::String fullName = SCRIPTS_FOLDER + fileName + ".js";
-			ptr<File> scriptFile = FolderFileSystem::GetNativeFileSystem()->LoadFile(fullName);
+			ptr<File> scriptFile = Platform::FileSystem::GetNativeFileSystem()->LoadFile(fullName);
 			_processedScriptSources.insert(fileName);
 			_scriptsVirtualMachine->LoadScript(scriptFile)->Run();
 		}

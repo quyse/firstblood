@@ -11,11 +11,14 @@ namespace Firstblood
 	class ISpatiallyIndexable
 	{
 	public:
-		virtual bool raycast(const vec2& origin, const vec2& end, float& dist) = 0;
+		virtual bool raycast(const vec3& origin, const vec3& end, float& dist) = 0;
 		virtual float getRadius() = 0;
-		virtual vec2 getPosition() = 0;
+		virtual vec3 getPosition() = 0;
 		virtual uint32_t getMask() = 0;
 		virtual vec2 getVelocity() = 0;
+	
+	public:
+		int uid;
 	};
 
 }

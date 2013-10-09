@@ -22,7 +22,7 @@ namespace Spatial
 		// todo: these ones are ugly and probably useless
 		inline uint32_t getMask() { return entity->getMask(); }
 		inline float getRadius() { return entity->getRadius(); }
-		inline vec2 getPosition() { return entity->getPosition(); }
+		inline vec3 getPosition() { return entity->getPosition(); }
 	};
 
 	// tree node with N children
@@ -41,62 +41,41 @@ namespace Spatial
 		Descendant* children[N];
 	};
 
-	// getNeighbours query uses this struct for heap-sorting candidates
-	template<class T>
-	struct PrioritizedEntity
-	{
-		PrioritizedEntity() : entity(nullptr), priority(FLT_MAX) {};
-		T* entity;
-		float priority;
-		
-		bool operator<(const PrioritizedEntity& other)
-		{
-			return priority < other.priority;
-		}
-	};
-
 
 	// base tree class, containing utility Node typedef and implementations of getNearestNeighbours and rayCast queries
 	template<class T, template<class T> class Descendant, template<class T> class Node>
 	class TreeBase : public IIndex2D<T>
 	{
 	public:
-		virtual T* raycast(const vec2& origin, const vec2& end, uint32_t mask, float& t, T* skipEntity = nullptr)
+		virtual T* raycast(const vec3& origin, const vec3& end, uint32_t mask, float& t, T* skipEntity = nullptr)
 		{
 			return raycastRecursively(origin, end, mask, t, _root, skipEntity);
 		}
 
-		virtual size_t getNeighbours(const vec2& point, float distance, uint32_t mask, T** result, size_t maxResultLength, T* skipEntity = nullptr) const
+		virtual size_t getNeighbours(const vec3& point, float distance, uint32_t mask, NearestNeighbor<T>* result, size_t maxResultLength, T* skipEntity = nullptr) const
 		{
 			if (maxResultLength == 0)
 				return 0;
-			maxResultLength = std::min(maxResultLength, GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE);
-
-			PrioritizedEntity<T> heap[GET_NEIGHBOURS_QUERY_MAX_BUFFER_SIZE + 1];
 			size_t currentResultLength = 0;
 			float currentMinDistance = distance;
-
-			getNeighboursRecursively(point, currentMinDistance, mask, currentResultLength, maxResultLength, _root, heap, skipEntity);
-
-			for (size_t i = 0; i < currentResultLength; ++i)
-				*(result + i) = heap[i].entity;
+			getNeighboursRecursively(point, currentMinDistance, mask, currentResultLength, maxResultLength, _root, result, skipEntity);
 			return currentResultLength;
 		}
 
 	protected:
 		// todo: should be iteratively
 		// todo: cull the segment by the current minimum distance
-		T* raycastRecursively(const vec2& origin, const vec2& end, uint32_t mask, float& t, Node<T>* node, T* skipEntity)
+		T* raycastRecursively(const vec3& origin, const vec3& end, uint32_t mask, float& t, Node<T>* node, T* skipEntity)
 		{
 			vec2 clippedOrigin, clippedEnd;
 			float dist;
 			float tmin, tmax;
-			bool intersects = intersectSegmentAABB(origin, end, node->min, node->max, clippedOrigin, clippedEnd, tmin, tmax);
+			bool intersects = intersectSegmentAABB(vec2(origin.x, origin.y), vec2(end.x, end.y), node->min, node->max, clippedOrigin, clippedEnd, tmin, tmax);
 			if (!intersects)
 				return nullptr;
 		
 			EntityList<T>* currentInhabitant = node->inhabitants;
-			vec2 i0, i1;
+			vec3 i0, i1;
 			t = FLT_MAX;
 			T* chosenEntity = nullptr;
 			while (currentInhabitant != nullptr)
@@ -136,9 +115,9 @@ namespace Spatial
 
 		// todo: should be iteratively
 		// todo: maybe heap sorting ain't worth it, try to use simple insertion sort instead
-		void getNeighboursRecursively(const vec2& point, float& distance, uint32_t mask, size_t& currentResultLength, size_t maxResultLength, Node<T>* currentNode, PrioritizedEntity<T>* heap, T* skipEntity) const
+		void getNeighboursRecursively(const vec3& point, float& distance, uint32_t mask, size_t& currentResultLength, size_t maxResultLength, Node<T>* currentNode, NearestNeighbor<T>* heap, T* skipEntity) const
 		{
-			if (!testSphereAABB(point, distance, currentNode->min, currentNode->max))
+			if (!testSphereAABB(vec2(point.x, point.y), distance, currentNode->min, currentNode->max))
 				return;
 		
 			EntityList<T>* inhabitant = currentNode->inhabitants;
@@ -146,7 +125,7 @@ namespace Spatial
 			{
 				if ((inhabitant->getMask() & mask) && (inhabitant->entity != skipEntity))
 				{
-					vec2 center = inhabitant->getPosition();
+					vec3 center = inhabitant->getPosition();
 					float dx = point.x - center.x;
 					float dy = point.y - center.y;
 					float radius = inhabitant->getRadius();
@@ -154,23 +133,23 @@ namespace Spatial
 					float sqrDist = dx * dx + dy * dy;
 					if (sqrDist < sumR * sumR)
 					{
-						float priority = std::max(0.0f, sqrtf(sqrDist) - radius);
+						float actualDistance = std::max(0.0f, sqrtf(sqrDist) - radius);
 						if (currentResultLength < maxResultLength)
 						{
-							(heap + currentResultLength)->priority = priority;
+							(heap + currentResultLength)->distance = actualDistance;
 							(heap + currentResultLength)->entity = inhabitant->entity;
 							std::push_heap(heap, heap + currentResultLength + 1);
 							++currentResultLength;
 						}
 						else
 						{
-							if (priority < heap->priority)
+							if (actualDistance < heap->distance)
 							{
 								std::pop_heap(heap, heap + currentResultLength);
-								(heap + currentResultLength - 1)->priority = priority;
+								(heap + currentResultLength - 1)->distance = actualDistance;
 								(heap + currentResultLength - 1)->entity = inhabitant->entity;
 								std::push_heap(heap, heap + currentResultLength);
-								distance = heap->priority;
+								distance = heap->distance;
 							}
 						}
 					}

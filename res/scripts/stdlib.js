@@ -134,6 +134,7 @@ this.Engine = {
 	Rvo: engine.getRvoSimulation(),
 	Camera: engine.getCamera(),
 	Input: engine.getInput(),
+	SpatialIndex: engine.getSpatialIndex(),
 	
 	getTime: function() { return time.getTime(); }
 };
@@ -142,3 +143,39 @@ this.setTimeout = function(closure, timeSpan) { return time.createTimer(closure,
 this.setInterval = function(closure, timeSpan) { return time.createTimer(closure, timeSpan, false); };
 this.clearTimer = function(timerId) { time.destroyTimer(timerId); };
 this.clearInterval = function(timerId) { time.destroyTimer(timerId); };
+
+Engine.Space = {
+	
+	raycast: function(origin, end, mask, skipEntity)
+	{
+		if (skipEntity)
+		{
+			entityMask = skipEntity.getMask();
+			skipEntity.setMask(0);
+			result = Engine.SpatialIndex.raycast(origin, end, mask);
+			skipEntity.setMask(entityMask);
+			return result;
+		}
+		else
+		{
+			return Engine.SpatialIndex.raycast(origin, end, mask);
+		}
+	},
+	
+	getNeighbors: function(point, distance, mask, maxResultLength, skipEntity)
+	{
+		if (skipEntity)
+		{
+			entityMask = skipEntity.getMask();
+			skipEntity.setMask(0);
+			result = Engine.SpatialIndex.getNeighbors(point, distance, mask, maxResultLength);
+			skipEntity.setMask(entityMask);
+			return result;		
+		}
+		else
+		{
+			return Engine.SpatialIndex.getNeighbors(point, distance, mask, maxResultLength);
+		}
+	}
+
+};

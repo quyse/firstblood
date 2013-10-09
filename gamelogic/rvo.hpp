@@ -22,12 +22,13 @@ namespace Firstblood
 	class RvoAgent : public ISpatiallyIndexable, public Inanity::RefCounted, public RVO::Agent
 	{
 	public:
-		virtual bool raycast(const vec2& origin, const vec2& end, float& dist) { return true; };
+		virtual bool raycast(const vec3& origin, const vec3& end, float& dist) { return true; };
 		virtual float getRadius() { return radius; };
-		virtual vec2 getPosition() { return position; };
+		virtual vec3 getPosition() { return vec3(position.x, position.y, 0); };
 		virtual uint32_t getMask() { return mask; };
 		virtual vec2 getVelocity() { return velocity_; };
 
+		void setMask(uint32_t mask);
 		float getMaxSpeed();
 		void setMaxSpeed(float value);
 		void setPrefVelocity(const vec2& velocity);
@@ -44,7 +45,7 @@ namespace Firstblood
 		RvoSimulation(size_t maxAgents, Spatial::IIndex2D<ISpatiallyIndexable>* spatialIndex);
 		virtual ~RvoSimulation();
 
-		ptr<RvoAgent> create(const vec2& position);
+		ptr<RvoAgent> create(const vec2& position, int uid);
 		void destroy(ptr<RvoAgent> agent);
 		void update(float dt);
 

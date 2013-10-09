@@ -79,7 +79,7 @@ void Engine::Run()
 		// rvo
 		rvoSimulation = NEW(Firstblood::RvoSimulation(256, spatialIndex));
 		// scripts
-		scripts = NEW(Firstblood::ScriptSystem(painter, rvoSimulation, &cameraViewMatrix));
+		scripts = NEW(Firstblood::ScriptSystem(painter, rvoSimulation, &cameraViewMatrix, spatialIndex));
 
 		try
 		{

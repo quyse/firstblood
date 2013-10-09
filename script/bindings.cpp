@@ -7,7 +7,14 @@
 #include "script/time.hpp"
 #include "script/camera.hpp"
 #include "script/input.hpp"
+#include "script/spatial.hpp"
 #include "gamelogic/rvo.hpp"
+
+/* SPATIAL */
+META_CLASS(Firstblood::ScriptSpatialIndex, Firstblood.Space);
+	META_METHOD(raycast);
+	META_METHOD(getNeighbors);
+META_CLASS_END();
 
 /* INPUT */
 META_CLASS(Firstblood::ScriptInput, Firstblood.Input)
@@ -39,6 +46,8 @@ META_CLASS(Firstblood::RvoSimulation, Firstblood.RvoSimulation);
 META_CLASS_END();
 
 META_CLASS(Firstblood::RvoAgent, Firstblood.RvoAgent);
+	META_METHOD(getMask);
+	META_METHOD(setMask);
 	META_METHOD(getMaxSpeed);
 	META_METHOD(setMaxSpeed);
 	META_METHOD(setPrefVelocity);
@@ -55,6 +64,7 @@ META_CLASS(Firstblood::ScriptSystem, Firstblood.Engine);
 	META_METHOD(getTime);
 	META_METHOD(getCamera);
 	META_METHOD(getInput);
+	META_METHOD(getSpatialIndex);
 	META_METHOD(require);
 META_CLASS_END();
 

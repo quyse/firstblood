@@ -14,9 +14,9 @@ struct QuadtreeDebugObject
 	QuadtreeDebugObject(const vec2& inCenter, float inRadius) : center(inCenter), radius(inRadius) {};
 	vec2 center;
 	float radius;
-	bool raycast(const vec2& origin, const vec2& end, float& dist) { return true; }
+	bool raycast(const vec3& origin, const vec3& end, float& dist) { return true; }
 	inline float getRadius() { return radius; }
-	inline vec2 getPosition() { return center; }
+	inline vec3 getPosition() { return vec3(center.x, center.y, 0); }
 	inline uint32_t getMask() { return 1; }
 };
 

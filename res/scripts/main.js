@@ -4,7 +4,8 @@ require("math/vec3");
 var Main = function()
 {
 	Engine.Camera.setLookAtLH(vec3.fromValues(0, 0, 100.0), vec3.fromValues(0.000001, 0, -1), vec3.fromValues(0, 1, 1))
-
+	
+	this.uidCounter = 1;
 	this.agentsWithGoals = [];
 	global.addListener(Event.FRAME, bind(this.update, this));
 	global.addListener(Event.KEYBOARD, bind(this.handleKeyEvent, this));
@@ -43,6 +44,10 @@ Main.prototype = {
 		{
 			var agentWithGoal = this.agentsWithGoals[i];
 			var agent = agentWithGoal[0];
+			if (i == 0)
+			{
+				log(Engine.Space.getNeighbors(agent.getPosition(), 10, 1, 8, agent));
+			}
 			var goal = agentWithGoal[1];
 			var toGoal = vec2.sub(goal, agent.getPosition());
 			agent.setPrefVelocity(vec2.scale(vec2.normalize(toGoal), agent.getMaxSpeed()));
@@ -52,7 +57,7 @@ Main.prototype = {
 		{
 			var x = badRandom(0.0, 1.0) < 0.5 ? -25.0 : 25.0
 			var y = badRandom(-100.0, 100.0)
-			var agent = Engine.Rvo.create(vec2.fromValues(x, y));
+			var agent = Engine.Rvo.create(vec2.fromValues(x, y), ++this.uidCounter);
 			this.agentsWithGoals.push([agent, vec2.fromValues(-x, -y)])
 		}
 		

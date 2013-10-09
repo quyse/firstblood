@@ -11,6 +11,11 @@ namespace Firstblood
 	/** Rvo agent **/
 	void RvoAgent::FreeAsNotReferenced() {}
 
+	void RvoAgent::setMask(uint32_t mask)
+	{
+		this->mask = mask;
+	}
+
 	float RvoAgent::getMaxSpeed()
 	{
 		return maxSpeed;
@@ -38,11 +43,12 @@ namespace Firstblood
 		delete _allocator;
 	}
 
-	ptr<RvoAgent> RvoSimulation::create(const vec2& position)
+	ptr<RvoAgent> RvoSimulation::create(const vec2& position, int uid)
 	{
 		void* agentMemory = _allocator->allocMemory(sizeof(RvoAgent));
 		RvoAgent* agent = new (agentMemory) RvoAgent;
 		agent->position = position;
+		agent->uid = uid;
 		addAgent(agent);
 		return agent;
 	}
@@ -85,13 +91,14 @@ namespace Firstblood
 	size_t RvoSimulation::find(RVO::Agent* agent, RVO::NeighborEntity* result, size_t maxResultLength)
 	{
 		RvoAgent* ourAgent = static_cast<RvoAgent*>(agent);
-		ISpatiallyIndexable* intermediateResult[RVO_GET_NEAREST_AGENTS_MAX_BUFFER_SIZE];
-		size_t count = _spatialIndex->getNeighbours(agent->position, agent->neighborDist, agent->mask, &intermediateResult[0], maxResultLength, ourAgent);
+		Spatial::NearestNeighbor<ISpatiallyIndexable> intermediateResult[RVO_GET_NEAREST_AGENTS_MAX_BUFFER_SIZE];
+		size_t count = _spatialIndex->getNeighbours(vec3(agent->position.x, agent->position.y, 0), agent->neighborDist, agent->mask, &intermediateResult[0], maxResultLength, ourAgent);
 		for (size_t i = 0; i < count; ++i)
 		{
-			ISpatiallyIndexable* intermediateNeighbor = intermediateResult[i];
+			ISpatiallyIndexable* intermediateNeighbor = intermediateResult[i].entity;
 			RVO::NeighborEntity* neighbor = result + i;
-			neighbor->position = intermediateNeighbor->getPosition();
+			vec3 neighborPosition = intermediateNeighbor->getPosition();
+			neighbor->position = vec2(neighborPosition.x, neighborPosition.y);
 			neighbor->radius = intermediateNeighbor->getRadius();
 			neighbor->velocity = intermediateNeighbor->getVelocity();
 		}

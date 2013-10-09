@@ -79,7 +79,7 @@ namespace Spatial
 			EntityList<T>* currentObject = objects;
 			while (currentObject != nullptr)
 			{
-				vec2 position = currentObject->getPosition();
+				vec3 position = currentObject->getPosition();
 				float radius = currentObject->getRadius();
 				node->max.x = std::max(node->max.x, position.x + radius);
 				node->min.x = std::min(node->min.x, position.x - radius);
@@ -102,7 +102,7 @@ namespace Spatial
 				while (currentObject != nullptr)
 				{
 					EntityList<T>* next = currentObject->next;
-					vec2 position = currentObject->getPosition();
+					vec3 position = currentObject->getPosition();
 					if (isVertical ? position.x < splitValue : position.y < splitValue)
 					{
 						currentObject->next = left;

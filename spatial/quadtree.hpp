@@ -65,7 +65,7 @@ namespace Spatial
 			{
 				T* object = objects + i;
 				float radius = object->getRadius();
-				vec2 position = object->getPosition();
+				vec3 position = object->getPosition();
 				addObjectRecursively(object, radius, position, this->_root, 0);
 			}
 		}
@@ -76,7 +76,7 @@ namespace Spatial
 			{
 				T* object = *(objects + i);
 				float radius = object->getRadius();
-				vec2 position = object->getPosition();
+				vec3 position = object->getPosition();
 				addObjectRecursively(object, radius, position, this->_root, 0);
 			}
 		}
@@ -88,7 +88,7 @@ namespace Spatial
 		}
 
 	private:
-		void addObjectRecursively(T* object, float radius, const vec2& position, QuadtreeNode<T>* currentNode, size_t currentLevel)
+		void addObjectRecursively(T* object, float radius, const vec3& position, QuadtreeNode<T>* currentNode, size_t currentLevel)
 		{
 			float size = currentNode->size;
 			float nextLevelSize = 0.5f * size;
@@ -110,7 +110,7 @@ namespace Spatial
 					QuadtreeNodeDescription nodeDesc = childNodesDescription[i];
 					vec2 min(x + nodeDesc.minX * size, y + nodeDesc.minY * size);
 					vec2 max(x + nodeDesc.maxX * size, y + nodeDesc.maxY * size);
-					if (testPointAABB(position, min, max))
+					if (testPointAABB(vec2(position.x, position.y), min, max))
 					{
 						if (currentNode->children[i] == nullptr)
 						{
@@ -152,7 +152,7 @@ namespace Spatial
 			EntityList<T>* inhabitant = currentNode->inhabitants;
 			while (inhabitant != nullptr)
 			{
-				vec2 center = inhabitant->getPosition();
+				vec3 center = inhabitant->getPosition();
 				float radius = inhabitant->getRadius();
 				minX = std::min(minX, center.x - radius);
 				minY = std::min(minY, center.y - radius);

@@ -11,6 +11,7 @@
 #include "script/time.hpp"
 #include "script/camera.hpp"
 #include "script/input.hpp"
+#include "script/spatial.hpp"
 #include "gamelogic/rvo.hpp"
 #include "Painter.hpp"
 
@@ -20,7 +21,7 @@ namespace Firstblood
 	class ScriptSystem : public Inanity::Object
 	{
 	public:
-		ScriptSystem(Painter* painter, ptr<RvoSimulation>, mat4x4* cameraViewMatrix);
+		ScriptSystem(Painter* painter, ptr<RvoSimulation>, mat4x4* cameraViewMatrix, Spatial::IIndex2D<ISpatiallyIndexable>* spatialIndex);
 		~ScriptSystem();
 		void fini();
 
@@ -42,6 +43,7 @@ namespace Firstblood
 		ptr<ScriptTime> getTime();
 		ptr<ScriptCamera> getCamera();
 		ptr<ScriptInput> getInput();
+		ptr<ScriptSpatialIndex> getSpatialIndex();
 		ptr<RvoSimulation> getRvoSimulation();
 		
 		// primitive analogue of python's import statement
@@ -61,8 +63,9 @@ namespace Firstblood
 		ptr<ScriptTime> _time;
 		ptr<ScriptCamera> _camera;
 		ptr<ScriptInput> _input;
+		ptr<ScriptSpatialIndex> _spatialIndex;
 		ptr<RvoSimulation> _rvoSimulation;
-
+		
 		// processed script files
 		std::unordered_set<Inanity::String> _processedScriptSources;
 	};

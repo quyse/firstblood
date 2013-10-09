@@ -50,7 +50,7 @@ exports.configureLinker = function(executableFile, linker) {
 	var objects = [
 		'main', 'Engine', 'Game', 'Geometry', 'GeometryFormats', 'Painter', 
 		'rvo.simulator', 'rvo.agent', 'rvo.math', 'gamelogic.rvo', 
-		'script.system', 'script.utils', 'script.bindings', 'script.time', 'script.spatial', 'script.camera'
+		'script.system', 'script.utils', 'script.bindings', 'script.time', 'script.spatial', 'script.camera', 'script.input'
 	];
 	for ( var i = 0; i < objects.length; ++i)
 		linker.addObjectFile(a[1] + objects[i]);

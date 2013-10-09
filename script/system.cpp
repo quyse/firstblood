@@ -127,7 +127,7 @@ namespace Firstblood
 
 	ptr<Inanity::Script::Any> ScriptSystem::createScriptInteger(long integer)
 	{
-		return _scriptsVirtualMachine->NewInteger(integer);
+		return _scriptsVirtualMachine->NewNumber(integer);
 	}
 
 	ptr<Inanity::Script::Any> ScriptSystem::createScriptFloat(float number)

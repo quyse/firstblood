@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "geometry/constants.hpp"
 #include "geometry/distance.hpp"
+#include <cfloat>
 
 inline bool testSegmentSegment1D(float a0, float a1, float b0, float b1)
 {

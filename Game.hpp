@@ -4,13 +4,9 @@
 #define GL_DEBUG
 
 #include <vector>
-
 #include "Engine.hpp"
 #include "spatial/quadtree.hpp"
 #include "spatial/kd_tree.hpp"
-#include "rvo/simulator.hpp"
-#include "gamelogic/common.hpp"
-#include "gamelogic/rvo.hpp"
 
 struct QuadtreeDebugObject
 {
@@ -18,11 +14,12 @@ struct QuadtreeDebugObject
 	QuadtreeDebugObject(const vec2& inCenter, float inRadius) : center(inCenter), radius(inRadius) {};
 	vec2 center;
 	float radius;
-	bool raycast(const vec2& origin, const vec2& end, float& dist) { return true; }
+	bool raycast(const vec3& origin, const vec3& end, float& dist) { return true; }
 	inline float getRadius() { return radius; }
-	inline vec2 getPosition() { return center; }
+	inline vec3 getPosition() { return vec3(center.x, center.y, 0); }
 	inline uint32_t getMask() { return 1; }
 };
+
 
 class Game : public Engine
 {
@@ -37,11 +34,6 @@ protected:
 
 
 protected:
-	// spatial index
-	Spatial::IIndex2D<Firstblood::ISpatiallyIndexable>* spatialIndex;
-	// rvo
-	Firstblood::RvoSimulation* rvoSimulation;
-
 	// debug crap
 	std::vector<std::pair<Firstblood::RvoAgent*, vec2>> agents;
 	Spatial::Quadtree<QuadtreeDebugObject>* quadtree;

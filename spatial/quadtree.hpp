@@ -43,8 +43,8 @@ namespace Spatial
 		Quadtree(size_t depth, float zeroLevelSize, size_t maxMemory) : _depth(depth), _zeroLevelSize(zeroLevelSize)
 		{
 			_arena = new ArenaAllocator(maxMemory);
-			_root = _arena->alloc<QuadtreeNode<T>>();
-			initNode(_root, _zeroLevelSize, 0, 0);
+			this->_root = _arena->alloc<QuadtreeNode<T>>();
+			initNode(this->_root, _zeroLevelSize, 0, 0);
 		}
 
 		virtual ~Quadtree()
@@ -55,8 +55,8 @@ namespace Spatial
 		virtual void purge()
 		{
 			_arena->purge();
-			_root = _arena->alloc<QuadtreeNode<T>>();
-			initNode(_root, _zeroLevelSize, 0, 0);
+			this->_root = _arena->alloc<QuadtreeNode<T>>();
+			initNode(this->_root, _zeroLevelSize, 0, 0);
 		}
 
 		virtual void build(T* objects, size_t objectsCount)
@@ -65,8 +65,8 @@ namespace Spatial
 			{
 				T* object = objects + i;
 				float radius = object->getRadius();
-				vec2 position = object->getPosition();
-				addObjectRecursively(object, radius, position, _root, 0);
+				vec3 position = object->getPosition();
+				addObjectRecursively(object, radius, position, this->_root, 0);
 			}
 		}
 
@@ -76,19 +76,19 @@ namespace Spatial
 			{
 				T* object = *(objects + i);
 				float radius = object->getRadius();
-				vec2 position = object->getPosition();
-				addObjectRecursively(object, radius, position, _root, 0);
+				vec3 position = object->getPosition();
+				addObjectRecursively(object, radius, position, this->_root, 0);
 			}
 		}
 
 		// each node's bounding box is shrinked to exactly fit it's content
 		virtual void optimize()
 		{
-			minifyRecursively(_root);
+			minifyRecursively(this->_root);
 		}
 
 	private:
-		void addObjectRecursively(T* object, float radius, const vec2& position, QuadtreeNode<T>* currentNode, size_t currentLevel)
+		void addObjectRecursively(T* object, float radius, const vec3& position, QuadtreeNode<T>* currentNode, size_t currentLevel)
 		{
 			float size = currentNode->size;
 			float nextLevelSize = 0.5f * size;
@@ -110,7 +110,7 @@ namespace Spatial
 					QuadtreeNodeDescription nodeDesc = childNodesDescription[i];
 					vec2 min(x + nodeDesc.minX * size, y + nodeDesc.minY * size);
 					vec2 max(x + nodeDesc.maxX * size, y + nodeDesc.maxY * size);
-					if (testPointAABB(position, min, max))
+					if (testPointAABB(vec2(position.x, position.y), min, max))
 					{
 						if (currentNode->children[i] == nullptr)
 						{
@@ -152,7 +152,7 @@ namespace Spatial
 			EntityList<T>* inhabitant = currentNode->inhabitants;
 			while (inhabitant != nullptr)
 			{
-				vec2& center = inhabitant->getPosition();
+				vec3 center = inhabitant->getPosition();
 				float radius = inhabitant->getRadius();
 				minX = std::min(minX, center.x - radius);
 				minY = std::min(minY, center.y - radius);

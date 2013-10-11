@@ -19,18 +19,18 @@ namespace Spatial
 		KdTree(size_t maxLeafSize, size_t maxMemory) : _maxLeafSize(maxLeafSize)
 		{
 			_arena = new ArenaAllocator(maxMemory);
-			_root = _arena->alloc<KdTreeNode<T>>();
+			this->_root = _arena->alloc<KdTreeNode<T>>();
 		}
 
 		virtual ~KdTree()
 		{
-			delete _root;
+			delete this->_root;
 		}
 
 		virtual void purge()
 		{
 			_arena->purge();
-			_root = _arena->alloc<KdTreeNode<T>>();
+			this->_root = _arena->alloc<KdTreeNode<T>>();
 		}
 
 		virtual void build(T* objects, size_t objectsCount)
@@ -46,7 +46,7 @@ namespace Spatial
 					wrap->next = wrappedObjects;
 					wrappedObjects = wrap;
 				}
-				buildRecursively(_root, wrappedObjects, objectsCount);
+				buildRecursively(this->_root, wrappedObjects, objectsCount);
 			}
 		}
 
@@ -63,7 +63,7 @@ namespace Spatial
 					wrap->next = wrappedObjects;
 					wrappedObjects = wrap;
 				}
-				buildRecursively(_root, wrappedObjects, objectsCount);
+				buildRecursively(this->_root, wrappedObjects, objectsCount);
 			}
 		}
 
@@ -79,7 +79,7 @@ namespace Spatial
 			EntityList<T>* currentObject = objects;
 			while (currentObject != nullptr)
 			{
-				vec2 position = currentObject->getPosition();
+				vec3 position = currentObject->getPosition();
 				float radius = currentObject->getRadius();
 				node->max.x = std::max(node->max.x, position.x + radius);
 				node->min.x = std::min(node->min.x, position.x - radius);
@@ -102,7 +102,7 @@ namespace Spatial
 				while (currentObject != nullptr)
 				{
 					EntityList<T>* next = currentObject->next;
-					vec2 position = currentObject->getPosition();
+					vec3 position = currentObject->getPosition();
 					if (isVertical ? position.x < splitValue : position.y < splitValue)
 					{
 						currentObject->next = left;

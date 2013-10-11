@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "rvo/agent.hpp"
 #include "rvo/simulator.hpp"
 #include "geometry/distance.hpp"

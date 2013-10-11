@@ -14,7 +14,7 @@ int main()
 #endif
 {
 #if defined(_MSVC_BUILD)
-	SetCurrentDirectoryA("F:/firstblood/msvc/firstblood/Debug");
+	SetCurrentDirectoryA("F:/firstblood/game/");
 #endif
 	try
 	{

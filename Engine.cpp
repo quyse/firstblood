@@ -12,6 +12,11 @@ Engine::Engine() :
 	cameraBeta(-3.1415926535897932f * 0.25f)
 {}
 
+Engine::~Engine()
+{
+	delete spatialIndex;
+}
+
 void Engine::Run()
 {
 	try
@@ -52,9 +57,9 @@ void Engine::Run()
 
 		fileSystem =
 #ifdef PRODUCTION
-			NEW(BlobFileSystem(FolderFileSystem::GetNativeFileSystem()->LoadFile("data")))
+			NEW(BlobFileSystem(Platform::FileSystem::GetNativeFileSystem()->LoadFile("data")))
 #else
-			NEW(BufferedFileSystem(NEW(FolderFileSystem("res"))))
+			NEW(BufferedFileSystem(NEW(Platform::FileSystem("res"))))
 #endif
 		;
 
@@ -69,6 +74,13 @@ void Engine::Run()
 
 		boxGeometry = LoadDebugGeometry("box.geo");
 
+		// spatial index
+		spatialIndex = NEW(Spatial::Quadtree<Firstblood::ISpatiallyIndexable>(5, 512.0f, 32 * 1024));
+		// rvo
+		rvoSimulation = NEW(Firstblood::RvoSimulation(256, spatialIndex));
+		// scripts
+		scripts = NEW(Firstblood::ScriptSystem(painter, rvoSimulation, &cameraViewMatrix, spatialIndex));
+
 		try
 		{
 			window->Run(Handler::Bind(MakePointer(this), &Engine::Tick));
@@ -77,6 +89,8 @@ void Engine::Run()
 		{
 			THROW_SECONDARY("Error while running game", exception);
 		}
+		
+		scripts->fini();
 	}
 	catch(Exception* exception)
 	{
@@ -89,10 +103,13 @@ void Engine::Tick()
 	float frameTime = ticker.Tick();
 
 	ptr<Input::Frame> inputFrame = inputManager->GetCurrentFrame();
+	const Input::State& inputState = inputFrame->GetCurrentState();
 	while(inputFrame->NextEvent())
 	{
 		const Input::Event& inputEvent = inputFrame->GetCurrentEvent();
-
+		scripts->setInputState(&inputState);
+		if (scripts->handleInputEvent(inputEvent))
+			continue;
 		//std::cout << inputEvent;
 
 		switch(inputEvent.device)
@@ -133,7 +150,6 @@ void Engine::Tick()
 	vec3 cameraRightDirection = normalize(cross(cameraDirection, vec3(0, 0, 1)));
 	vec3 cameraUpDirection = cross(cameraRightDirection, cameraDirection);
 
-	const Input::State& inputState = inputFrame->GetCurrentState();
 	/*
 	left up right down Q E
 	37 38 39 40
@@ -163,21 +179,20 @@ void Engine::Tick()
 	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition, cameraPosition + cameraDirection, vec3(0, 1, -1));
 //	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition = vec3(10, 10, 50), vec3(0, 0, 0), vec3(0, 0, 1));
 	mat4x4 projMatrix = CreateProjectionPerspectiveFovMatrix(3.1415926535897932f / 4, float(screenWidth) / float(screenHeight), 0.1f, 1000.0f);
-
 	// рисование кадра
 
 	painter->BeginFrame(frameTime);
-	painter->SetCamera(projMatrix * viewMatrix, cameraPosition);
+	Step(frameTime);
+
 	const vec3 sunDirection = normalize(vec3(-1, -1, -1));
 	mat4x4 sunTransform =
 		CreateProjectionPerspectiveFovMatrix(3.1415926535897932f / 4, 1.0f, 0.1f, 150.0f)
 		* CreateLookAtMatrix(sunDirection * -100.0f, vec3(0, 0, 0), vec3(0, 0, 1));
+
 	painter->SetSceneLighting(vec3(1, 1, 1) * 0.1f, vec3(1, 1, 1), sunDirection, sunTransform);
-
-	Step(frameTime);
-
+	vec3 translation(cameraViewMatrix(3, 0), cameraViewMatrix(3, 1), cameraViewMatrix(3, 2));
+	painter->SetCamera(projMatrix * cameraViewMatrix, cameraPosition);
 	painter->SetupPostprocess(1.0f, 1.0f, 1.0f);
-
 	painter->Draw();
 
 #if 0

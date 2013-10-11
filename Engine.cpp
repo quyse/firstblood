@@ -195,8 +195,6 @@ void Engine::Tick()
 	painter->SetupPostprocess(1.0f, 1.0f, 1.0f);
 	painter->Draw();
 
-#if 0
-
 	Context::LetFrameBuffer lfb(context, presenter->GetFrameBuffer());
 	Context::LetViewport lv(context, screenWidth, screenHeight);
 
@@ -220,10 +218,8 @@ void Engine::Tick()
 		sprintf(fpsString, "frameTime: %.6f sec, FPS: %.6f\n", lastAllTicksTime / needTickCount, needTickCount / lastAllTicksTime);
 		textDrawer->DrawTextLine(fpsString, -0.95f - 2.0f / screenWidth, -0.95f - 2.0f / screenHeight, vec4(1, 1, 1, 1), FontAlignments::Left | FontAlignments::Bottom);
 		textDrawer->DrawTextLine(fpsString, -0.95f, -0.95f, vec4(1, 0, 0, 1), FontAlignments::Left | FontAlignments::Bottom);
+		textDrawer->Flush();
 	}
-
-	textDrawer->Flush();
-#endif
 
 	presenter->Present();
 }

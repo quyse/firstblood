@@ -174,7 +174,7 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 		psSky = shaderCache->GetPixelShader((
 			p = mul(skyUniforms.invViewProjTransform, newvec4(iTexcoord * newvec2(2.0f, -2.0f) + newvec2(-1.0f, 1.0f), 1.0f, 1.0f)),
 			q = normalize(p["xyz"] / p["w"] - skyUniforms.cameraPosition)["z"] * Value<float>(0.5f) + Value<float>(0.5f),
-			fTarget = newvec4(p, p, p, 1)//newvec4(q, q, q, 1)
+			fTarget = newvec4(q, q, q, 1)
 			));
 
 		// шейдер tone mapping
@@ -331,7 +331,6 @@ void Painter::SetupPostprocess(float bloomLimit, float toneLuminanceKey, float t
 
 void Painter::Draw()
 {
-#if 1
 	float zeroColor[] = { 0, 0, 0, 0 };
 	float farColor[] = { 1e8, 1e8, 1e8, 1e8 };
 
@@ -346,7 +345,6 @@ void Painter::Draw()
 		float color[4] = { 0.1f, 0, 0, 1 };
 		context->ClearColor(0, color);
 
-#if 1
 		// нарисовать небо
 		skyUniforms.invViewProjTransform.SetValue(cameraInvViewProj);
 		skyUniforms.cameraPosition.SetValue(cameraPosition);
@@ -361,10 +359,8 @@ void Painter::Draw()
 		Context::LetDepthWrite ldw(context, false);
 		Context::LetCullMode lcm(context, Context::cullModeNone);
 		context->Draw();
-#endif
 	}
 
-#if 0
 	// основное рисование
 	{
 		Context::LetFrameBuffer lfb(context, fbMain);
@@ -386,6 +382,7 @@ void Painter::Draw()
 		Context::LetPixelShader lps(context, psDebug);
 		Context::LetVertexBuffer lvb(context, 0, vbDebug);
 		Context::LetIndexBuffer lib(context, ibDebug);
+		Context::LetCullMode lcm(context, Context::cullModeNone);
 
 		for(int i = 0; i < (int)debugVertices.size(); i += debugVerticesBufferCount)
 		{
@@ -395,17 +392,15 @@ void Painter::Draw()
 			context->Draw(verticesCount);
 		}
 	}
-#endif
-#endif
 
 	// всё, теперь постпроцессинг
 	{
-		float clearColor[] = { 0, 1, 0, 0 };
+		float clearColor[] = { 0, 0, 0, 0 };
 
 		// tone mapping
 		Context::LetFrameBuffer lfb(context, presenter->GetFrameBuffer());
 		Context::LetViewport lv(context, screenWidth, screenHeight);
-#if 1
+
 		toneUniforms.luminanceKey.SetValue(toneLuminanceKey);
 		toneUniforms.maxLuminance.SetValue(toneMaxLuminance);
 		toneUniforms.group->Upload(context);
@@ -416,7 +411,9 @@ void Painter::Draw()
 		Context::LetAttributeBinding lab(context, abFilter);
 		Context::LetVertexShader lvs(context, vsFilter);
 		Context::LetPixelShader lps(context, psTone);
-#endif
+		Context::LetDepthTestFunc ldtf(context, Context::depthTestFuncAlways);
+		Context::LetDepthWrite ldw(context, false);
+
 		context->ClearColor(0, clearColor);
 
 		context->Draw();

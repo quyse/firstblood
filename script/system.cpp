@@ -29,7 +29,7 @@ namespace Firstblood
 		v8State->Register<ScriptCamera>();
 		_input = NEW(ScriptInput());
 		v8State->Register<ScriptInput>();
-		_spatialIndex = NEW(ScriptSpatialIndex(spatialIndex));
+		_spatialIndex = NEW(ScriptSpatialIndex(spatialIndex, painter));
 		v8State->Register<ScriptSpatialIndex>();
 		_rvoSimulation = rvoSimulation;
 		v8State->Register<RvoSimulation>();

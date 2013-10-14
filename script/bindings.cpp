@@ -14,6 +14,7 @@
 META_CLASS(Firstblood::ScriptSpatialIndex, Firstblood.Space);
 	META_METHOD(raycast);
 	META_METHOD(getNeighbors);
+	META_METHOD(draw);
 META_CLASS_END();
 
 /* INPUT */
@@ -48,6 +49,7 @@ META_CLASS_END();
 META_CLASS(Firstblood::RvoAgent, Firstblood.RvoAgent);
 	META_METHOD(getMask);
 	META_METHOD(setMask);
+	META_METHOD(setTimeHorizon);
 	META_METHOD(getMaxSpeed);
 	META_METHOD(setMaxSpeed);
 	META_METHOD(setPrefVelocity);
@@ -76,4 +78,6 @@ META_CLASS(Firstblood::ScriptPainter, Firstblood.Painter)
 	META_METHOD(drawLine);
 	META_METHOD(drawAABB);
 	META_METHOD(drawRect);
+	META_METHOD(drawCircle);
+	META_METHOD(setGlobalScale);
 META_CLASS_END();

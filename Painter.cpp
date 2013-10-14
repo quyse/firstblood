@@ -322,6 +322,18 @@ void Painter::DebugDrawCube(const mat4x4& transform, const vec3& color)
 			debugVertices.push_back(v[n[i][q[j]]]);
 }
 
+void Painter::DebugDrawCircle(const vec3& center, float radius, const vec3& color, uint segmentsCount)
+{
+	for (size_t i = 0; i < segmentsCount; ++i)
+	{
+		float startAngle = i * 2 * (float)M_PI / segmentsCount;
+		float endAngle = ((i + 1) % segmentsCount) * 2 * (float)M_PI / segmentsCount;
+		vec3 start = center + vec3(cos(startAngle) * radius, sin(startAngle) * radius, center.z);
+		vec3 end = center + vec3(cos(endAngle) * radius, sin(endAngle) * radius, center.z);
+		DebugDrawLine(start, end, color);
+	}
+}
+
 void Painter::SetupPostprocess(float bloomLimit, float toneLuminanceKey, float toneMaxLuminance)
 {
 	this->bloomLimit = bloomLimit;

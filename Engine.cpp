@@ -173,11 +173,6 @@ void Engine::Tick()
 	if(inputState.keyboard[69])
 		cameraMove += cameraMoveDirectionUp * cameraStep;
 
-	static vec3 cameraPosition(0, 0, 100);
-	cameraPosition += cameraMove * frameTime;
-
-	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition, cameraPosition + cameraDirection, vec3(0, 1, -1));
-//	mat4x4 viewMatrix = CreateLookAtMatrix(cameraPosition = vec3(10, 10, 50), vec3(0, 0, 0), vec3(0, 0, 1));
 	mat4x4 projMatrix = CreateProjectionPerspectiveFovMatrix(3.1415926535897932f / 4, float(screenWidth) / float(screenHeight), 0.1f, 1000.0f);
 	// рисование кадра
 
@@ -191,7 +186,7 @@ void Engine::Tick()
 
 	painter->SetSceneLighting(vec3(1, 1, 1) * 0.1f, vec3(1, 1, 1), sunDirection, sunTransform);
 	vec3 translation(cameraViewMatrix(3, 0), cameraViewMatrix(3, 1), cameraViewMatrix(3, 2));
-	painter->SetCamera(projMatrix * cameraViewMatrix, cameraPosition);
+	painter->SetCamera(projMatrix * cameraViewMatrix, translation);
 	painter->SetupPostprocess(1.0f, 1.0f, 1.0f);
 	painter->Draw();
 
@@ -216,8 +211,8 @@ void Engine::Tick()
 		}
 		char fpsString[64];
 		sprintf(fpsString, "frameTime: %.6f sec, FPS: %.6f\n", lastAllTicksTime / needTickCount, needTickCount / lastAllTicksTime);
-		textDrawer->DrawTextLine(fpsString, -0.95f - 2.0f / screenWidth, -0.95f - 2.0f / screenHeight, vec4(1, 1, 1, 1), FontAlignments::Left | FontAlignments::Bottom);
-		textDrawer->DrawTextLine(fpsString, -0.95f, -0.95f, vec4(1, 0, 0, 1), FontAlignments::Left | FontAlignments::Bottom);
+		textDrawer->DrawTextLine(fpsString, -0.95f - 2.0f / screenWidth, -0.8f - 2.0f / screenHeight, vec4(1, 1, 1, 1), FontAlignments::Left | FontAlignments::Bottom);
+		textDrawer->DrawTextLine(fpsString, -0.95f, -0.8f, vec4(1, 0, 0, 1), FontAlignments::Left | FontAlignments::Bottom);
 		textDrawer->Flush();
 	}
 

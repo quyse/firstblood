@@ -6,7 +6,7 @@
 namespace Firstblood
 {
 
-	ScriptSpatialIndex::ScriptSpatialIndex(Spatial::IIndex2D<ISpatiallyIndexable>* index) : _index(index)
+	ScriptSpatialIndex::ScriptSpatialIndex(Spatial::IIndex2D<ISpatiallyIndexable>* index, Painter* painter) : _index(index), _painter(painter)
 	{
 	}
 
@@ -45,6 +45,22 @@ namespace Firstblood
 			result->Set(2 * i + 1, system->createScriptFloat(rawNeighbors[i].distance));
 		}
 		return result;
+	}
+
+	void ScriptSpatialIndex::draw(float visualScale)
+	{
+		_index->draw(*this);
+		_currentVisualScale = visualScale;
+	}
+
+	void ScriptSpatialIndex::drawNode(const vec2& min, const vec2& max)
+	{
+		_painter->DebugDrawRectangle(min.x * _currentVisualScale, min.y * _currentVisualScale, max.x * _currentVisualScale, max.y * _currentVisualScale, 0, vec3(0.0f, 1.0f, 0.0f));
+	}
+
+	void ScriptSpatialIndex::drawInhabitant(const vec2& position, float radius)
+	{
+		_painter->DebugDrawCircle(vec3(position.x, position.y, 0.0f) * _currentVisualScale, radius * _currentVisualScale, vec3(1.0f, 183.0f / 255.0f, 213.0f / 255.0f), 16);
 	}
 
 }

@@ -92,6 +92,8 @@ template<typename T, int N>
 inline bool intersectSegmentSphere(const xvec<T, N>& a0, const xvec<T, N>& a1, const xvec<T, N>& center, T radius, xvec<T, N>& intersection0, xvec<T, N>& intersection1, T& tmin, T& tmax)
 {
 	xvec<T, N> d = a1 - a0;
+	T dirLen = length(d);
+	d /= dirLen;
 	xvec<T, N> m = a0 - center;
 	T b = dot(m, d);
 	T c = dot(m, m) - radius * radius;
@@ -105,10 +107,10 @@ inline bool intersectSegmentSphere(const xvec<T, N>& a0, const xvec<T, N>& a1, c
 	tmin = -b - sqrtDiscr;
 	tmax = -b + sqrtDiscr;
 
-	if (!testSegmentSegment1D(0, 1, tmin, tmax))
+	if (!testSegmentSegment1D((T)0.0, dirLen, tmin, tmax))
 		return false;
-	tmin = clamp(tmin, (T)0.0, (T)1.0);
-	tmax = clamp(tmax, (T)0.0, (T)1.0);
+	tmin = clamp(tmin, (T)0.0, (T)dirLen);
+	tmax = clamp(tmax, (T)0.0, (T)dirLen);
 	intersection0 = a0 + d * tmin;
 	intersection1 = a0 + d * tmax;
 	return true;

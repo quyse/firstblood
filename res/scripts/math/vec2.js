@@ -67,6 +67,8 @@ vec2.fromValues = function(x, y) {
     return out;
 };
 
+vec2.v = vec2.fromValues;
+
 /**
  * Copy the values from one vec2 to another
  *

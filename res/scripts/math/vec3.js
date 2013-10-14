@@ -71,6 +71,8 @@ vec3.fromValues = function(x, y, z) {
     return out;
 };
 
+vec3.v = vec3.fromValues;
+
 /**
  * Copy the values from one vec3 to another
  *
@@ -109,11 +111,8 @@ vec3.set = function(out, x, y, z) {
  * @param {vec3} b the second operand
  * @returns {vec3} out
  */
-vec3.add = function(out, a, b) {
-    out[0] = a[0] + b[0];
-    out[1] = a[1] + b[1];
-    out[2] = a[2] + b[2];
-    return out;
+vec3.add = function(a, b) {
+    return vec3.fromValues(a[0] + b[0], a[1] + b[1], a[2] + b[2]);
 };
 
 /**
@@ -217,11 +216,8 @@ vec3.max = function(out, a, b) {
  * @param {Number} b amount to scale the vector by
  * @returns {vec3} out
  */
-vec3.scale = function(out, a, b) {
-    out[0] = a[0] * b;
-    out[1] = a[1] * b;
-    out[2] = a[2] * b;
-    return out;
+vec3.scale = function(a, b) {
+    return vec3.fromValues(a[0] * b, a[1] * b, a[2] * b);
 };
 
 /**

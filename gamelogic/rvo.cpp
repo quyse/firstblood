@@ -21,6 +21,11 @@ namespace Firstblood
 		return maxSpeed;
 	}
 
+	void RvoAgent::setTimeHorizon(float horizon)
+	{
+		timeHorizon = horizon;
+	}
+
 	void RvoAgent::setMaxSpeed(float value)
 	{
 		maxSpeed = value;

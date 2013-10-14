@@ -189,6 +189,7 @@ public:
 	/// Нарисовать куб [-1, 1] с заданной трансформацией.
 	void DebugDrawCube(const mat4x4& transform, const vec3& color);
 	//void DebugDrawSphere(const vec3& center, float radius, const vec3& color, int alphaCount = 8, int betaCount = 8);
+	void DebugDrawCircle(const vec3& center, float radius, const vec3& color, uint segmentsCount);
 
 	/// Установить параметры постпроцессинга.
 	void SetupPostprocess(float bloomLimit, float toneLuminanceKey, float toneMaxLuminance);

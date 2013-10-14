@@ -28,6 +28,7 @@ namespace Firstblood
 		virtual uint32_t getMask() { return mask; };
 		virtual vec2 getVelocity() { return velocity_; };
 
+		void setTimeHorizon(float horizon);
 		void setMask(uint32_t mask);
 		float getMaxSpeed();
 		void setMaxSpeed(float value);

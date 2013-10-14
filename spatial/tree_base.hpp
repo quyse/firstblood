@@ -62,13 +62,17 @@ namespace Spatial
 			return currentResultLength;
 		}
 
+		virtual void draw(IDrawer& drawer)
+		{
+			drawRecursively(_root, drawer);
+		}
+
 	protected:
 		// todo: should be iteratively
 		// todo: cull the segment by the current minimum distance
 		T* raycastRecursively(const vec3& origin, const vec3& end, uint32_t mask, float& t, Node<T>* node, T* skipEntity)
 		{
 			vec2 clippedOrigin, clippedEnd;
-			float dist;
 			float tmin, tmax;
 			bool intersects = intersectSegmentAABB(vec2(origin.x, origin.y), vec2(end.x, end.y), node->min, node->max, clippedOrigin, clippedEnd, tmin, tmax);
 			if (!intersects)
@@ -83,6 +87,7 @@ namespace Spatial
 				if ((mask & currentInhabitant->getMask()) && intersectSegmentSphere(origin, end, currentInhabitant->getPosition(), currentInhabitant->getRadius(), i0, i1, tmin, tmax))
 				{
 					T* currentEntity = currentInhabitant->entity;
+					float dist = length(i0 - origin);
 					if (currentEntity != skipEntity && currentEntity->raycast(origin, end, dist))
 					{
 						if (dist < t)
@@ -162,6 +167,24 @@ namespace Spatial
 				Node<T>* child = currentNode->children[i];
 				if (child != nullptr)
 					getNeighboursRecursively(point, distance, mask, currentResultLength, maxResultLength, child, heap, skipEntity);
+			}
+		}
+
+		void drawRecursively(Node<T>* node, IDrawer& drawer)
+		{
+			drawer.drawNode(node->min, node->max);
+			EntityList<T>* inhabitant = node->inhabitants;
+			while (inhabitant != nullptr)
+			{
+				vec3 position = inhabitant->getPosition();
+				drawer.drawInhabitant(vec2(position.x, position.y), inhabitant->getRadius());
+				inhabitant = inhabitant->next;
+			}
+			for (size_t i = 0; i < Descendant<T>::NODES_COUNT; ++i)
+			{
+				Node<T>* child = node->children[i];
+				if (child != nullptr)
+					drawRecursively(child, drawer);
 			}
 		}
 

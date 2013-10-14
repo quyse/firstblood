@@ -29,12 +29,15 @@ namespace Firstblood
 		void drawLine(const vec3& a, const vec3& b, uint color, float thickness);
 		void drawAABB(const vec3& min, const vec3& max, uint color);
 		void drawRect(const vec2& min, const vec2& max, float z, uint color, float thickness);
+		void drawCircle(const vec3& center, float radius, uint color, uint segments);
+		void setGlobalScale(float scale);
 
 	private:
 		vec3 colorToVec3(uint color);
 
 	private:
 		ptr<Painter> _painter;
+		float _scale;
 
 	META_DECLARE_CLASS(ScriptPainter);
 	};

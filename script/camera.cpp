@@ -12,9 +12,6 @@ namespace Firstblood
 	{
 		mat4x4& matrix = *_engineCameraMatrixPtr;
 		matrix = CreateLookAtMatrix(position, position + direction, upVector);
-		matrix(3, 0) = position.x;
-		matrix(3, 1) = position.y;
-		matrix(3, 2) = position.z;
 	}
 
 }

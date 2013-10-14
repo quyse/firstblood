@@ -31,6 +31,7 @@ void Game::Step(float frameTime)
 
 	// build spatial index
 	spatialIndex->build(spatialEntities, entitiesCollected);
+	spatialIndex->optimize();
 
 	// rvo simulation
 	rvoSimulation->update(20 * frameTime);

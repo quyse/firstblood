@@ -6,26 +6,18 @@ var GameplayRegistry = function()
 	this.list = [];
 
 	this.toBeRemoved = [];
-	this.toBeAdded = [];
 	this.updating = false;
 }
 GameplayRegistry.prototype = {
 
 	register: function(object)
 	{
-		if (this.updating)
-		{
-			object.alive = true;
-			this.toBeAdded.push(object);
-		}
-		else
-		{
-			object.uid = ++this.uidCounter;
-			this.table[object.uid] = object;
-			if (object.update)
-				this.list.push(object);
-			this.uidToListIndexMap[object.uid] = this.list.length - 1;
-		}
+		object.alive = true;
+		object.uid = ++this.uidCounter;
+		this.table[object.uid] = object;
+		if (object.update)
+			this.list.push(object);
+		this.uidToListIndexMap[object.uid] = this.list.length - 1;
 	},
 
 	unregister: function(object)
@@ -60,10 +52,6 @@ GameplayRegistry.prototype = {
 		for (i = 0, l = this.toBeRemoved.length; i < l; ++i)
 			this.unregister(this.toBeRemoved[i]);
 		this.toBeRemoved = [];
-
-		for (i = 0, l = this.toBeAdded.length; i < l; ++i)
-			this.register(this.toBeAdded[i]);
-		this.toBeAdded = [];
 	}
 
 };
@@ -93,4 +81,4 @@ DebugDrawer.prototype = {
 			this.list[i].debugDraw();
 	}
 
-}
+};

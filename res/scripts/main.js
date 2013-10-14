@@ -1,8 +1,9 @@
-require("math/vec2");
-require("math/vec3");
+require('math/vec2');
+require('math/vec3');
 
 require('gameplay/core');
 require('gameplay/player');
+require('gameplay/spawner')
 require('injector');
 
 require("citygen");
@@ -21,6 +22,9 @@ var Main = function()
 	this.injector.addDependency("DebugDrawer", this.debugDrawer);
 
 	this.player = this.injector.create(Player);
+	this.injector.addDependency("Player", this.player);
+
+	this.spawner = this.injector.create(Spawner);
 
 	global.addListener(Event.FRAME, bind(this.update, this));
 	global.addListener(Event.KEYBOARD, bind(this.handleKeyEvent, this));
@@ -93,7 +97,7 @@ Main.prototype = {
 
 		return;*/
 
-		function badRandom(a, b)
+		/*function badRandom(a, b)
 		{
 			return a + (b - a) * Math.random()
 		}
@@ -141,6 +145,6 @@ Main.prototype = {
 			var y = agentPosition[1];
 			var radius = agent.getRadius();
 			Engine.Painter.drawCircle([x, y, 0], radius, 0xffffff, 16);
-		}
+		}*/
 	}
 }

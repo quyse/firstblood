@@ -28,13 +28,15 @@ Injector.prototype = {
 			object[dependencyName] = dependency;
 		}
 		object.__classUid__ = constructor.__classUid__;
-		object.init.apply(object, Array.prototype.slice(arguments, 1));
+		object.init.apply(object, Array.prototype.slice.call(arguments, 1));
 		return object;
 	},
 
 	destroy: function(object)
 	{
-		object.fini.apply(object);
+		if (object.fini)
+			object.fini.apply(object);
+
 		var dependencies = this.classUidToDependenciesMap[object.__classUid__];
 		for (var i = 0, l = dependencies.length; i < l; ++i)
 		{

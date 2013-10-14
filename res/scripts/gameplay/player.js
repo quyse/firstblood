@@ -11,10 +11,6 @@ Player.prototype = {
 		this.rvoAgent.setTimeHorizon(0.1);
 	},
 
-	fini: function()
-	{
-	},
-
 	update: function(dt)
 	{
 		var input = Engine.Input;

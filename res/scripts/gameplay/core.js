@@ -10,6 +10,11 @@ var GameplayRegistry = function()
 }
 GameplayRegistry.prototype = {
 
+	get: function(uid)
+	{
+		return this.table[uid];
+	},
+
 	register: function(object)
 	{
 		object.alive = true;
@@ -49,6 +54,7 @@ GameplayRegistry.prototype = {
 		for (var i = 0, l = this.list.length; i < l; ++i)
 			this.list[i].update(dt);
 
+		this.updating = false;
 		for (i = 0, l = this.toBeRemoved.length; i < l; ++i)
 			this.unregister(this.toBeRemoved[i]);
 		this.toBeRemoved = [];

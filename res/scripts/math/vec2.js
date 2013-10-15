@@ -69,6 +69,10 @@ vec2.fromValues = function(x, y) {
 
 vec2.v = vec2.fromValues;
 
+vec2.to3 = function(v, z) {
+    return vec3.fromValues(v[0], v[1], z);
+};
+
 /**
  * Copy the values from one vec2 to another
  *

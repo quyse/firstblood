@@ -75,7 +75,8 @@ void Engine::Run()
 		boxGeometry = LoadDebugGeometry("box.geo");
 
 		// spatial index
-		spatialIndex = NEW(Spatial::Quadtree<Firstblood::ISpatiallyIndexable>(5, 512.0f, 32 * 1024));
+		//spatialIndex = NEW(Spatial::Quadtree<Firstblood::ISpatiallyIndexable>(5, 512.0f, 32 * 1024));
+		spatialIndex = NEW(Spatial::KdTree<Firstblood::ISpatiallyIndexable>(8, 32 * 1024));
 		// rvo
 		rvoSimulation = NEW(Firstblood::RvoSimulation(256, spatialIndex));
 		// scripts

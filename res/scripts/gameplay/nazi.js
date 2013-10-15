@@ -7,19 +7,23 @@ Nazi.prototype = {
 	{
 		this.spawner = spawner;
 		this.rvoAgent = Engine.Rvo.create(position, this.uid);
+		this.rvoAgent.setMaxSpeed(0.5 + Math.random());
 	},
 
 	fini: function()
 	{
 		Engine.Rvo.destroy(this.rvoAgent);
-		spawner.naziKilled();
+		this.spawner.naziKilled();
 	},
 
 	update: function(dt)
 	{
-		var playerPosition = this.Player.getPosition();
-		var prefVelocity = vec2.sub(playerPosition, this.rvoAgent.getPosition());
-		this.rvoAgent.setPrefVelocity(prefVelocity);
+		if (this.alive)
+		{
+			var playerPosition = this.Player.getPosition();
+			var prefVelocity = vec2.sub(playerPosition, this.rvoAgent.getPosition());
+			this.rvoAgent.setPrefVelocity(prefVelocity);
+		}
 	},
 
 	debugDraw: function()

@@ -50,8 +50,8 @@ Main.prototype = {
 
 	handleKeyEvent: function(event)
 	{
-		if (event.isDown && event.key == 32)
-			this.cameraPosition[0] = this.cameraPosition[1] = 0;
+		//if (event.isDown && event.key == 32)
+		//	this.cameraPosition[0] = this.cameraPosition[1] = 0;
 	},
 	
 	handleMouseMoveEvent: function(event)

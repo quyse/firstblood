@@ -12,6 +12,14 @@ GameplayRegistry.prototype = {
 
 	get: function(uid)
 	{
+		if (uid in this.table)
+		{
+			var object = this.table[uid];
+			if (object.alive)
+				return object;
+			else
+				return null;
+		}
 		return this.table[uid];
 	},
 

@@ -35,9 +35,11 @@ void Game::Step(float frameTime)
 
 	// rvo simulation
 	rvoSimulation->update(20 * frameTime);
-
 	// run scripts 
 	scripts->update(20 * frameTime);
+
+	// do cleanup for each subsystem (for example, execute deferred script requests for objects' addition/removal)
+	rvoSimulation->postUpdate();
 
 	Thread::Sleep(10);
 }

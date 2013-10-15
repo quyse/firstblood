@@ -62,8 +62,7 @@ Main.prototype = {
 	
 	handleMouseButtonEvent: function(event)
 	{
-		if (event.isLeftButton && event.isDown)
-			log("Hey, easy, man, easy!");
+
 	},
 
 	update: function(event)

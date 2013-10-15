@@ -2,7 +2,6 @@
 #include "rvo/agent.hpp"
 #include "rvo/simulator.hpp"
 #include "geometry/distance.hpp"
-#include <algorithm>
 
 namespace RVO 
 {
@@ -11,7 +10,6 @@ namespace RVO
 
 	Agent::~Agent() {};
 
-	// todo: get rid of std::vector
 	void Agent::computeNewVelocity(float dt, NearestNeighborsFinder* nearestNeighborsFinder)
 	{
 		size_t maxResultLength = std::min(RVO_GET_NEAREST_AGENTS_MAX_BUFFER_SIZE, maxNeighbors);

@@ -49,6 +49,8 @@ META_CLASS_END();
 META_CLASS(Firstblood::RvoAgent, Firstblood.RvoAgent);
 	META_METHOD(getMask);
 	META_METHOD(setMask);
+	META_METHOD(setMaxNeighbors);
+	META_METHOD(setImmobilized);
 	META_METHOD(setTimeHorizon);
 	META_METHOD(getMaxSpeed);
 	META_METHOD(setMaxSpeed);

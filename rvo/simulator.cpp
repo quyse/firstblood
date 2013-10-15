@@ -27,12 +27,6 @@ namespace RVO
 		assert(_agentsCount < _maxAgentsCount);
 		agent->_index = _agentsCount ;
 		_agents[_agentsCount++] = agent;
-		agent->maxNeighbors = defaultAgent_->maxNeighbors;
-		agent->maxSpeed = defaultAgent_->maxSpeed;
-		agent->neighborDist = defaultAgent_->neighborDist;
-		agent->radius = defaultAgent_->radius;
-		agent->timeHorizon = defaultAgent_->timeHorizon;
-		agent->velocity_ = defaultAgent_->velocity_;
 		return agent;
 	}
 
@@ -46,13 +40,30 @@ namespace RVO
 		--_agentsCount;
 	}
 
+	void Simulator::applyDefaultsToAgent(Agent* agent)
+	{
+		agent->maxNeighbors = defaultAgent_->maxNeighbors;
+		agent->maxSpeed = defaultAgent_->maxSpeed;
+		agent->neighborDist = defaultAgent_->neighborDist;
+		agent->radius = defaultAgent_->radius;
+		agent->timeHorizon = defaultAgent_->timeHorizon;
+		agent->velocity_ = defaultAgent_->velocity_;
+	}
+
 	void Simulator::doStep(float dt, NearestNeighborsFinder* nearestNeighborsFinder)
 	{
-		for (size_t i = 0; i < _agentsCount; ++i) 
-			_agents[i]->computeNewVelocity(dt, nearestNeighborsFinder);
-
-		for (size_t i = 0; i < _agentsCount; ++i) 
+		for (size_t i = 0; i < _agentsCount; ++i)
+		{
+			if (!_agents[i]->immobilized)
+				_agents[i]->computeNewVelocity(dt, nearestNeighborsFinder);
+			else
+				_agents[i]->newVelocity_ = vec2(0, 0);
+		}
+			
+		for (size_t i = 0; i < _agentsCount; ++i)
+		{
 			_agents[i]->update(dt);
+		}	
 	}
 
 	size_t Simulator::getNumAgents() const

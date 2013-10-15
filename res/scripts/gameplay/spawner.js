@@ -16,7 +16,7 @@ Spawner.prototype = {
 
 	update: function(dt)
 	{
-		if (this.nazisCount < 128)
+		if (this.nazisCount < 256)
 		{
 			var spawnPoint = vec2.v(-100, 100 * (1 - 2 * Math.random()));
 			++this.nazisCount;

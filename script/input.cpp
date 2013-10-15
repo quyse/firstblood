@@ -33,6 +33,12 @@ namespace Firstblood
 				_charsDown.erase(event.keyboard.key);
 			}
 		}
+		else
+		{
+			// ignore cursorMove for now
+			if (event.mouse.type == Inanity::Input::Event::Mouse::typeCursorMove)
+				return false;
+		}
 
 		ScriptSystem* system = ScriptSystem::getInstance();
 		ptr<Inanity::Script::Any> scriptEvent = system->createScriptArray(2);
@@ -50,23 +56,23 @@ namespace Firstblood
 		else
 		{
 			eventDetails = system->createScriptArray(3);
-			bool isMouseMove = event.mouse.type == Inanity::Input::Event::Mouse::typeMove;
-			eventDetails->Set(0, system->createScriptBoolean(isMouseMove));
-			if (isMouseMove)
+			if (event.mouse.type == Inanity::Input::Event::Mouse::typeRawMove)
 			{
 				ptr<Inanity::Script::Any> offset = system->createScriptArray(3);
-				offset->Set(0, system->createScriptFloat(event.mouse.offsetX));
-				offset->Set(1, system->createScriptFloat(event.mouse.offsetY));
-				offset->Set(2, system->createScriptFloat(event.mouse.offsetZ));
+				offset->Set(0, system->createScriptFloat(event.mouse.rawMoveX));
+				offset->Set(1, system->createScriptFloat(event.mouse.rawMoveY));
+				offset->Set(2, system->createScriptFloat(event.mouse.rawMoveZ));
+				eventDetails->Set(0, system->createScriptBoolean(true));
 				eventDetails->Set(1, offset);
 			}
-			else
+			else if (event.mouse.type != Inanity::Input::Event::Mouse::typeCursorMove)
 			{
 				ptr<Inanity::Script::Any> mouseDetails = system->createScriptArray(2);
 				// isDown
 				mouseDetails->Set(0, system->createScriptBoolean(event.mouse.type == Inanity::Input::Event::Mouse::typeButtonDown));
 				// button
 				mouseDetails->Set(1, system->createScriptInteger(event.mouse.button));
+				eventDetails->Set(0, system->createScriptBoolean(false));
 				eventDetails->Set(1, mouseDetails);
 			}
 		}
@@ -112,7 +118,7 @@ namespace Firstblood
 
 	vec2 ScriptInput::getCursorPosition()
 	{
-		return vec2(_state->mouseX, _state->mouseY);
+		return vec2((float)_state->cursorX, (float)_state->cursorY);
 	}
 
 	void ScriptInput::addListener(ptr<Inanity::Script::Any> listener)

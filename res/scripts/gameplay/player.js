@@ -11,7 +11,20 @@ Player.prototype = {
 		this.rvoAgent.setMaxSpeed(this.maxSpeed);
 		this.rvoAgent.setTimeHorizon(0.1);
 
-		this.lameRecharge = 0;
+		this.weaponRecharge = 0;
+		this.playerPressesFire = false;
+		global.addListener(Event.MOUSE_BUTTON, this.keyboardListener = bind(this.handleKeyEvent, this));
+	},
+
+	fini: function()
+	{
+		global.removeListener(Event.MOUSE_BUTTON, this.keyboardListener);
+	},
+
+	handleKeyEvent: function(event)
+	{
+		if (event.isLeftButton)
+			this.playerPressesFire = event.isDown;
 	},
 
 	update: function(dt)
@@ -21,12 +34,24 @@ Player.prototype = {
 		var vy = input.isKeyDown(83) ? -1 : (input.isKeyDown(87) ? 1 : 0);
 		this.rvoAgent.setPrefVelocity(vec2.scale(vec2.v(vx, vy), this.maxSpeed));
 
-		if (this.lameRecharge <= 0)
+		if (this.weaponRecharge <= 0)
 		{
-			this.lameRecharge = 1;
-			var projectile = this.Injector.create(Projectile, vec2.to3(this.rvoAgent.getPosition(), 0), vec3.v(-1, 0, 0), 5, this.rvoAgent);
+			this.weaponRecharge = 0.05;
+			if (this.playerPressesFire)
+			{
+				cursor = Engine.Input.getCursorPosition();
+				var dx = cursor[0] - 505;
+				var dy = 282 - cursor[1];
+				var angle = Math.atan2(dy, dx);
+				angle += 0.12 * (1 - 2 * Math.random());
+				direction = vec3.normalize(vec2.to3(vec2.v(Math.cos(angle), Math.sin(angle)), 0));
+				this.Injector.create(Projectile, vec2.to3(this.rvoAgent.getPosition(), 0), direction, 5, this.rvoAgent);
+			}
 		}
-		this.lameRecharge -= dt;
+		else
+		{
+			this.weaponRecharge -= dt;
+		}
 	},
 
 	getPosition: function()

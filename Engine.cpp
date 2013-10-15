@@ -78,7 +78,7 @@ void Engine::Run()
 		//spatialIndex = NEW(Spatial::Quadtree<Firstblood::ISpatiallyIndexable>(5, 512.0f, 32 * 1024));
 		spatialIndex = NEW(Spatial::KdTree<Firstblood::ISpatiallyIndexable>(8, 32 * 1024));
 		// rvo
-		rvoSimulation = NEW(Firstblood::RvoSimulation(256, spatialIndex));
+		rvoSimulation = NEW(Firstblood::RvoSimulation(512, spatialIndex));
 		// scripts
 		scripts = NEW(Firstblood::ScriptSystem(painter, rvoSimulation, &cameraViewMatrix, spatialIndex));
 
@@ -105,74 +105,12 @@ void Engine::Tick()
 
 	ptr<Input::Frame> inputFrame = inputManager->GetCurrentFrame();
 	const Input::State& inputState = inputFrame->GetCurrentState();
+	scripts->setInputState(&inputState);
 	while(inputFrame->NextEvent())
 	{
 		const Input::Event& inputEvent = inputFrame->GetCurrentEvent();
-		scripts->setInputState(&inputState);
-		if (scripts->handleInputEvent(inputEvent))
-			continue;
-		//std::cout << inputEvent;
-
-		switch(inputEvent.device)
-		{
-		case Input::Event::deviceKeyboard:
-			if(inputEvent.keyboard.type == Input::Event::Keyboard::typeKeyDown)
-			{
-				switch(inputEvent.keyboard.key)
-				{
-				case 27: // escape
-					window->Close();
-					return;
-				case 32:
-					//physicsCharacter.FastCast<Physics::BtCharacter>()->GetInternalController()->jump();
-					break;
-				}
-			}
-			break;
-		case Input::Event::deviceMouse:
-			switch(inputEvent.mouse.type)
-			{
-			case Input::Event::Mouse::typeButtonDown:
-				break;
-			case Input::Event::Mouse::typeButtonUp:
-				break;
-			case Input::Event::Mouse::typeMove:
-				cameraAlpha -= std::max(std::min(inputEvent.mouse.offsetX * 0.005f, maxAngleChange), -maxAngleChange);
-				cameraBeta -= std::max(std::min(inputEvent.mouse.offsetY * 0.005f, maxAngleChange), -maxAngleChange);
-				break;
-			}
-			break;
-		}
+		scripts->handleInputEvent(inputEvent);
 	}
-
-	cameraBeta = clamp(cameraBeta, -1.5f, 1.5f);
-
-	vec3 cameraDirection = normalize(vec3(0.00001f, 0.0f, -0.999f));//vec3(cos(cameraAlpha) * cos(cameraBeta), sin(cameraAlpha) * cos(cameraBeta), sin(cameraBeta));
-	vec3 cameraRightDirection = normalize(cross(cameraDirection, vec3(0, 0, 1)));
-	vec3 cameraUpDirection = cross(cameraRightDirection, cameraDirection);
-
-	/*
-	left up right down Q E
-	37 38 39 40
-	65 87 68 83 81 69
-	*/
-	float cameraStep = 5;
-	vec3 cameraMove(0, 0, 0);
-	vec3 cameraMoveDirectionFront(cos(cameraAlpha), sin(cameraAlpha), 0);
-	vec3 cameraMoveDirectionUp(0, 0, 1);
-	vec3 cameraMoveDirectionRight = cross(cameraMoveDirectionFront, cameraMoveDirectionUp);
-	if(inputState.keyboard[37] || inputState.keyboard[65])
-		cameraMove -= cameraMoveDirectionRight * cameraStep;
-	if(inputState.keyboard[38] || inputState.keyboard[87])
-		cameraMove += cameraMoveDirectionFront * cameraStep;
-	if(inputState.keyboard[39] || inputState.keyboard[68])
-		cameraMove += cameraMoveDirectionRight * cameraStep;
-	if(inputState.keyboard[40] || inputState.keyboard[83])
-		cameraMove -= cameraMoveDirectionFront * cameraStep;
-	if(inputState.keyboard[81])
-		cameraMove -= cameraMoveDirectionUp * cameraStep;
-	if(inputState.keyboard[69])
-		cameraMove += cameraMoveDirectionUp * cameraStep;
 
 	mat4x4 projMatrix = CreateProjectionPerspectiveFovMatrix(3.1415926535897932f / 4, float(screenWidth) / float(screenHeight), 0.1f, 1000.0f);
 	// рисование кадра

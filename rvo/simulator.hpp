@@ -27,6 +27,7 @@ namespace RVO
 		void removeAgent(Agent* agent);
 		size_t getNumAgents() const;
 		size_t getMaxAgents() const;
+		void applyDefaultsToAgent(Agent* agent);
 		void setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed, const vec2& velocity = vec2());
 
 		void doStep(float dt, NearestNeighborsFinder* nearestNeighborsFinder);

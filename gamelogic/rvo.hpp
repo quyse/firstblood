@@ -1,6 +1,8 @@
 #ifndef __FB_GAMELOGIC_RVO_HPP__
 #define __FB_GAMELOGIC_RVO_HPP__
 
+#include <vector>
+#include <unordered_set>
 #include "inanity/script/v8/State.hpp"
 #include "inanity/meta/decl.hpp"
 #include "inanity/ptr.hpp"
@@ -28,6 +30,8 @@ namespace Firstblood
 		virtual uint32_t getMask() { return mask; };
 		virtual vec2 getVelocity() { return velocity_; };
 
+		void setMaxNeighbors(int value);
+		void setImmobilized(bool value);
 		void setTimeHorizon(float horizon);
 		void setMask(uint32_t mask);
 		float getMaxSpeed();
@@ -49,6 +53,7 @@ namespace Firstblood
 		ptr<RvoAgent> create(const vec2& position, int uid);
 		void destroy(ptr<RvoAgent> agent);
 		void update(float dt);
+		void postUpdate();
 
 		// todo: why the fuck does ptr see RVO::Simulation when trying to import these methods directly?
 		void setAgentDefaults(float neighborDist, size_t maxNeighbors, float timeHorizon, float radius, float maxSpeed);
@@ -62,6 +67,8 @@ namespace Firstblood
 	private:
 		Spatial::IIndex2D<ISpatiallyIndexable>* _spatialIndex;
 		PoolAllocator* _allocator;
+		std::vector<RvoAgent*> toBeAddedQueue;
+		std::vector<RvoAgent*> toBeRemovedQueue;
 
 	META_DECLARE_CLASS( RvoSimulation );
 	};

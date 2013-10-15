@@ -335,7 +335,8 @@ vec3.negate = function(out, a) {
  * @param {vec3} a vector to normalize
  * @returns {vec3} out
  */
-vec3.normalize = function(out, a) {
+vec3.normalize = function(a) {
+    var out = vec3.clone(a);
     var x = a[0],
         y = a[1],
         z = a[2];

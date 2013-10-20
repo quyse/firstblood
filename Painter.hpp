@@ -131,9 +131,6 @@ private:
 	Interpolant<vec3> iColor;
 	Interpolant<float> iDepth;
 
-	/// Выходной цвет.
-	Fragment<vec4> fTarget;
-
 private:
 	void ResizeScreen(int screenWidth, int screenHeight);
 	/// Повернуть вектор кватернионом.

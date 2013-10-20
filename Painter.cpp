@@ -74,8 +74,7 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 
 	iTexcoord(0),
 	iColor(1),
-	iDepth(2),
-	fTarget(0)
+	iDepth(2)
 {
 	// создать ресурсы, зависящие от размера экрана
 	ResizeScreen(output->GetWidth(), output->GetHeight());
@@ -144,7 +143,7 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 		iColor = debugAttributes.color
 		));
 	psDebug = shaderCache->GetPixelShader((
-		fTarget = newvec4(iColor, 1)
+		fragment(0, newvec4(iColor, 1))
 		));
 
 	//** шейдеры постпроцессинга и размытия теней
@@ -155,8 +154,6 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 
 		// промежуточные
 		Interpolant<vec2> iTexcoord(0);
-		// результат
-		Fragment<vec4> fTarget(0);
 
 		// вершинный шейдер - общий для всех постпроцессингов
 		vsFilter = shaderCache->GetVertexShader((
@@ -174,7 +171,7 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 		psSky = shaderCache->GetPixelShader((
 			p = mul(skyUniforms.invViewProjTransform, newvec4(iTexcoord * newvec2(2.0f, -2.0f) + newvec2(-1.0f, 1.0f), 1.0f, 1.0f)),
 			q = normalize(p["xyz"] / p["w"] - skyUniforms.cameraPosition)["z"] * Value<float>(0.5f) + Value<float>(0.5f),
-			fTarget = newvec4(q, q, q, 1)
+			fragment(0, newvec4(q, q, q, 1))
 			));
 
 		// шейдер tone mapping
@@ -184,7 +181,7 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 			Expression shader = (
 				iTexcoord,
 				color = toneUniforms.sourceSampler.Sample(iTexcoord),
-				fTarget = newvec4(color, 1.0f)
+				fragment(0, newvec4(color, 1.0f))
 #if 0
 				luminance = dot(color, newvec3(0.2126f, 0.7152f, 0.0722f)),
 				relativeLuminance = toneUniforms.luminanceKey * luminance,
@@ -192,7 +189,7 @@ Painter::Painter(ptr<Device> device, ptr<Context> context, ptr<Presenter> presen
 				color = saturate(color * (intensity / luminance)),
 				// гамма-коррекция
 				color = pow(color, newvec3(0.45f, 0.45f, 0.45f)),
-				fTarget = newvec4(color, 1.0f)
+				fragment(0, newvec4(color, 1.0f))
 #endif
 			);
 			psTone = shaderCache->GetPixelShader(shader);
